@@ -1,0 +1,3076 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduExpert</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Mengaktifkan fitur tambahan Tailwind seperti backdrop-filter
+        tailwind.config = {
+          theme: {
+            extend: {
+              // Menambahkan konfigurasi font Inter
+              fontFamily: {
+                sans: ['Inter', 'sans-serif'],
+              },
+            }
+          }
+        }
+    </script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js untuk Diagram -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    
+    <style>
+        /* Menggunakan font Inter secara default */
+        body { 
+            font-family: 'Inter', 'sans-serif'; 
+        }
+
+        .menu-item.active {
+            background-color: #3b82f61a; /* blue-600 with opacity */
+            color: #60a5fa; /* blue-400 */
+            border-left: 4px solid #60a5fa;
+            font-weight: 600;
+        }
+        
+        /* Styling untuk Drawer (Laci) */
+        #drawer {
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+            z-index: 50; /* Diperbarui dari 40 menjadi 50 */
+        }
+        #drawer.open {
+            transform: translateX(0);
+        }
+
+        /* Overlay saat drawer terbuka */
+        #overlay {
+            z-index: 40;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            pointer-events: none;
+        }
+        #overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .page-content {
+            animation: fadeIn 0.4s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Styling card mapel yang interaktif */
+        .subject-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .subject-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Custom scrollbar for dark mode */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+        /* Firefox scrollbar */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255,255,255,0.3) rgba(255,255,255,0.1);
+        }
+
+        /* Styling untuk Chat Box Simulasi */
+        .chat-message {
+            max-width: 85%;
+            padding: 10px 15px;
+            border-radius: 18px;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+        }
+        .user-message {
+            background-color: #60a5fa; /* blue-400 */
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+        .tentor-message {
+            background-color: #e5e7eb; /* gray-200 */
+            color: #1f2937; /* gray-900 */
+            margin-right: auto;
+            border-bottom-left-radius: 4px;
+        }
+        
+        /* Glassmorphism khusus leaderboard */
+        .leaderboard-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s;
+        }
+        .leaderboard-item:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.01);
+        }
+        .leaderboard-top-1 {
+            border: 2px solid #fbbf24; /* Amber/Gold */
+            background: linear-gradient(90deg, rgba(251, 191, 36, 0.1), rgba(251, 191, 36, 0.05));
+        }
+        .leaderboard-top-2 {
+            border: 2px solid #94a3b8; /* Silver */
+        }
+        .leaderboard-top-3 {
+            border: 2px solid #d97706; /* Bronze */
+        }
+        .leaderboard-me {
+            border: 2px solid #60a5fa; /* Blue highlight for USER */
+            background: rgba(96, 165, 250, 0.2);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-indigo-900 via-blue-900 to-purple-400 font-sans">
+
+    
+    <div id="app-container" class="relative">
+
+        
+        <div id="overlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-30 transition-opacity duration-300"></div>
+
+        
+        <div id="page-login" class="flex items-center justify-center min-h-screen p-4">
+            
+            <div class="w-full max-w-md bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl p-8 transform transition duration-500 hover:scale-[1.02] border border-white/20">
+                <div class="text-center mb-6">
+                    
+                    <img src="https://placehold.co/100x100/1e3a8a/ffffff?text=EDUXPERT" 
+                         alt="EduExpert Logo" 
+                         class="h-24 w-24 mx-auto mb-2 rounded-full shadow-xl border-4 border-white/50 object-cover">
+                    
+                    <h2 class="text-2xl font-semibold text-white">EduExpert</h2>
+                    <p class="mt-2 text-sm text-gray-200">Platform Edukasi SMA Terbaik</p>
+                </div>
+                
+                <form id="login-form" class="space-y-4">
+                    <div>
+                        <label for="username" class="block text-sm font-medium text-white">Username:</label>
+                        <input type="text" id="username" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900" placeholder="Masukkan Username Anda" required>
+                    </div>
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-white">Password:</label>
+                        <input type="password" id="password" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900" placeholder="Masukkan Password Anda" required>
+                    </div>
+                    <button type="submit" class="w-full py-2 px-4 border border-transparent rounded-lg shadow-md text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 transform hover:scale-[1.01]">
+                        Masuk ke EduExpert
+                    </button>
+                    <p id="login-message" class="text-center text-sm text-red-300 mt-2 hidden">Username atau Password salah!</p>
+                </form>
+            </div>
+        </div>
+
+        
+        
+        <!-- PAGE REGISTER (added) -->
+        <div id="page-register" class="hidden flex items-center justify-center min-h-screen p-4">
+            <div class="w-full max-w-md bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl p-8 transform transition duration-500 hover:scale-[1.02] border border-white/20">
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-semibold text-white">Daftar Akun EduExpert</h2>
+                    <p class="mt-2 text-sm text-gray-200">Buat akun untuk menyimpan progress dan mengikuti tryout.</p>
+                </div>
+                <form id="register-form" class="space-y-4">
+                    <div>
+                        <label for="reg_fullname" class="block text-sm font-medium text-white">Nama Lengkap:</label>
+                        <input type="text" id="reg_fullname" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900" placeholder="Nama Lengkap" required>
+                    </div>
+                    <div>
+                        <label for="reg_username" class="block text-sm font-medium text-white">Username:</label>
+                        <input type="text" id="reg_username" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900" placeholder="Pilih Username" required>
+                    </div>
+                    <div>
+                        <label for="reg_password" class="block text-sm font-medium text-white">Password:</label>
+                        <input type="password" id="reg_password" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900" placeholder="Buat Password" required>
+                    </div>
+                    <div>
+                        <label for="reg_school" class="block text-sm font-medium text-white">Asal Sekolah:</label>
+                        <input type="text" id="reg_school" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900" placeholder="Contoh: SMA N 1 Contoh" required>
+                    </div>
+                    <button type="submit" class="w-full py-2 px-4 border border-transparent rounded-lg shadow-md text-base font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 transform hover:scale-[1.01]">
+                        Buat Akun dan Masuk
+                    </button>
+                    <p id="register-message" class="text-center text-sm text-emerald-200 mt-2 hidden"></p>
+                    <p class="text-center text-sm text-gray-200 mt-2">Sudah punya akun? <a href="#" id="link-login" class="text-blue-300 font-semibold">Masuk di sini</a></p>
+                </form>
+            </div>
+        </div>
+        <!-- END PAGE REGISTER -->
+
+
+<div id="page-main" class="hidden">
+            
+            
+            <nav class="sticky top-0 bg-white/20 backdrop-blur-md shadow-lg p-4 flex justify-between items-center z-30">
+                <button id="drawer-toggle" class="p-2 rounded-lg text-white hover:bg-white/10 transition duration-150">
+                    <i data-lucide="menu" class="w-6 h-6"></i>
+                </button>
+                <h1 id="navbar-title" class="text-xl font-bold text-white transition-opacity duration-300">Dashboard</h1>
+                <div class="w-6"></div> 
+            </nav>
+
+            
+            <main class="p-6 md:p-10 text-white min-h-[calc(100vh-68px)]">
+                
+                
+                <div id="content-dashboard" class="page-content">
+                    <h2 class="text-3xl font-bold text-gray-100 mb-6 border-b border-purple-300 pb-2 flex items-center">
+                        <i data-lucide="home" class="w-7 h-7 mr-2 text-purple-300"></i> Selamat Datang Kembali!
+                    </h2>
+                    
+                    
+                    <div class="bg-white/10 backdrop-blur-sm p-6 rounded-xl shadow-2xl border border-white/20 mb-10 transform transition duration-300 hover:scale-[1.005]">
+                        <p class="text-xl font-light mb-4">
+                            Apa yang ingin kamu pelajari hari ini? Pilih menu utama di bawah untuk memulai sesi belajar yang efektif!
+                        </p>
+                        <div class="flex items-center text-sm font-semibold text-yellow-300">
+                             <i data-lucide="rocket" class="w-5 h-5 mr-2"></i> Fokus pada tujuan akademismu!
+                        </div>
+                    </div>
+
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        
+                        
+                        <div onclick="navigate('materi')" class="cursor-pointer bg-blue-600/30 backdrop-blur-md p-8 rounded-3xl shadow-2xl border-4 border-blue-400/50 transform hover:scale-[1.05] transition duration-300 hover:shadow-blue-500/50">
+                            <div class="flex items-center justify-between mb-4">
+                                <i data-lucide="book-open-text" class="w-12 h-12 text-blue-300 bg-blue-800/50 p-2 rounded-full"></i>
+                                <span class="text-sm font-medium bg-blue-700/50 px-3 py-1 rounded-full border border-blue-500 text-blue-200">9 Mapel</span>
+                            </div>
+                            <h3 class="text-3xl font-extrabold text-white mb-2">Materi Pembelajaran</h3>
+                            <p class="text-gray-200 text-lg">Akses semua modul, rangkuman, dan video penjelasan untuk persiapan sekolah dan ujian.</p>
+                            <div class="mt-4 flex items-center text-blue-300 font-bold">
+                                Jelajahi Sekarang <i data-lucide="arrow-right" class="w-5 h-5 ml-2"></i>
+                            </div>
+                        </div>
+
+                        
+                        <div onclick="navigate('tryout')" class="cursor-pointer bg-red-600/30 backdrop-blur-md p-8 rounded-3xl shadow-2xl border-4 border-red-400/50 transform hover:scale-[1.05] transition duration-300 hover:shadow-red-500/50">
+                            <div class="flex items-center justify-between mb-4">
+                                <i data-lucide="award" class="w-12 h-12 text-red-300 bg-red-800/50 p-2 rounded-full"></i>
+                                <span class="text-sm font-medium bg-red-700/50 px-3 py-1 rounded-full border border-red-500 text-red-200">Tryout Terbaru</span>
+                            </div>
+                            <h3 class="text-3xl font-extrabold text-white mb-2">Tryout &amp; Ujian</h3>
+                            <p class="text-gray-200 text-lg">Uji kesiapan Anda dengan simulasi ujian waktu nyata dan dapatkan analisis hasil yang detail.</p>
+                            <div class="mt-4 flex items-center text-red-300 font-bold">
+                                Siap Uji Diri <i data-lucide="arrow-right" class="w-5 h-5 ml-2"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- --- BAGIAN PROGRES --- -->
+                <div id="content-progres" class="page-content hidden">
+                    <h3 class="text-2xl font-semibold text-cyan-300 mb-6 flex items-center">
+                        <i data-lucide="bar-chart-2" class="w-6 h-6 mr-2"></i> Statistik &amp; Peringkat
+                    </h3>
+
+                    <!-- Baris Diagram -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                        <!-- Diagram 1 -->
+                        <div class="bg-white/10 backdrop-blur-md p-6 rounded-xl shadow-lg border border-white/20">
+                            <h4 class="text-lg font-bold text-white mb-4">Rata-rata Nilai Tryout</h4>
+                            <div class="h-64">
+                                <canvas id="chartNilai"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- Diagram 2 -->
+                        <div class="bg-white/10 backdrop-blur-md p-6 rounded-xl shadow-lg border border-white/20">
+                            <h4 class="text-lg font-bold text-white mb-4">Status Pengerjaan Soal</h4>
+                            <div class="h-64 flex justify-center">
+                                <canvas id="chartStatus"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bagian Peringkat -->
+                    <div class="bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl p-6 border border-white/20">
+                        <div class="flex flex-col md:flex-row justify-between items-center mb-6 border-b border-gray-600 pb-4">
+                            <div>
+                                <h3 class="text-2xl font-bold text-yellow-300 flex items-center">
+                                    <i data-lucide="trophy" class="w-7 h-7 mr-2"></i> Top 10 Siswa Berprestasi
+                                </h3>
+                                <p class="text-gray-300 text-sm mt-1">SMA N 2 LAMONGAN - Semester Genap</p>
+                            </div>
+                            <div class="mt-4 md:mt-0 px-4 py-2 bg-blue-600 rounded-full text-sm font-semibold shadow-lg">
+                                Posisi Anda: #5
+                            </div>
+                        </div>
+
+                        <div class="space-y-3" id="leaderboard-container">
+                            <!-- Leaderboard content will be injected via JS -->
+                        </div>
+                    </div>
+
+                    <!-- KUMPULAN SOAL TRYOUT DALAM PROGRES -->
+                    <div class="mt-10">
+                        <h3 class="text-2xl font-bold text-purple-300 mb-2 flex items-center">
+                            <i data-lucide="list-checks" class="w-6 h-6 mr-2"></i> Kumpulan Soal Tryout per Mapel
+                        </h3>
+                        <!-- Banner gambar yang Anda upload -->
+                        <div class="flex items-center gap-3 mb-4">
+                            <img src="/workspace/uploads/1.png" alt="banner 1" class="h-20 w-auto rounded-lg border border-white/20 object-cover" onerror="this.style.display='none'">
+                            <img src="/workspace/uploads/2.png" alt="banner 2" class="h-20 w-auto rounded-lg border border-white/20 object-cover" onerror="this.style.display='none'">
+                        </div>
+                        <p class="text-sm text-gray-200 mb-4">Pilih Mapel lalu Sub-bab untuk mengerjakan soal. Jawaban pilihan ganda A–E. Klik “Nilai Sub-bab” untuk melihat skor.</p>
+                        <div id="progres-tryout-container" class="space-y-4">
+                            <!-- Soal per mapel/sub-bab akan diinject via JS -->
+                        </div>
+                    </div>
+                </div>
+
+
+                
+                <div id="content-materi" class="page-content hidden">
+                    <h3 class="text-2xl font-semibold text-purple-300 mb-6 flex items-center">
+                        <i data-lucide="book-open" class="w-6 h-6 mr-2"></i> Pilih Materi Pembelajaran
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        
+                        <div class="subject-card bg-white/10 backdrop-blur-sm p-6 rounded-xl shadow-xl border border-white/20 transform hover:scale-[1.03] transition duration-200">
+                            <i data-lucide="leaf" class="w-8 h-8 text-green-300 mb-3"></i>
+                            <h4 class="text-xl font-bold text-white">Biologi</h4>
+                            <p class="text-sm text-gray-300 mt-2">Pelajari sel, genetik, dan ekosistem kehidupan.</p>
+                            <button onclick="showContent('materi-biologi')" class="mt-4 w-full py-2 bg-green-700/50 text-white font-semibold rounded-lg hover:bg-green-600 transition duration-150">
+                                Mulai Belajar
+                            </button>
+                        </div>
+                        
+                        <div class="subject-card bg-white/10 backdrop-blur-sm p-6 rounded-xl shadow-xl border border-white/20 transform hover:scale-[1.03] transition duration-200">
+                            <i data-lucide="bar-chart-3" class="w-8 h-8 text-red-300 mb-3"></i>
+                            <h4 class="text-xl font-bold text-white">Matematika</h4>
+                            <p class="text-sm text-gray-300 mt-2">Kuasi konsep aljabar, kalkulus, dan peluang.</p>
+                            <button onclick="showContent('materi-matematika')" class="mt-4 w-full py-2 bg-red-700/50 text-white font-semibold rounded-lg hover:bg-red-600 transition duration-150">
+                                Mulai Belajar
+                            </button>
+                        </div>
+                        
+                        <div class="subject-card bg-white/10 backdrop-blur-sm p-6 rounded-xl shadow-xl border border-white/20 transform hover:scale-[1.03] transition duration-200">
+                            <i data-lucide="flask-conical" class="w-8 h-8 text-indigo-300 mb-3"></i>
+                            <h4 class="text-xl font-bold text-white">Kimia</h4>
+                            <p class="text-sm text-gray-300 mt-2">Pahami ikatan, reaksi, dan struktur molekul.</p>
+                            <button onclick="showContent('materi-kimia')" class="mt-4 w-full py-2 bg-indigo-700/50 text-white font-semibold rounded-lg hover:bg-indigo-600 transition duration-150">
+                                Mulai Belajar
+                            </button>
+                        </div>
+                        
+                        <div class="subject-card bg-white/10 backdrop-blur-sm p-6 rounded-xl shadow-xl border border-white/20 transform hover:scale-[1.03] transition duration-200">
+                            <i data-lucide="bolt" class="w-8 h-8 text-yellow-300 mb-3"></i>
+                            <h4 class="text-xl font-bold text-white">Fisika</h4>
+                            <p class="text-sm text-gray-300 mt-2">Hukum Newton, listrik, magnet, dan optik.</p>
+                            <button onclick="showContent('materi-fisika')" class="mt-4 w-full py-2 bg-yellow-700/50 text-white font-semibold rounded-lg hover:bg-yellow-600 transition duration-150">
+                                Mulai Belajar
+                            </button>
+                        </div>
+                        
+                        <div class="subject-card bg-white/10 backdrop-blur-sm p-6 rounded-xl shadow-xl border border-white/20 transform hover:scale-[1.03] transition duration-200">
+                            <i data-lucide="trending-up" class="w-8 h-8 text-blue-300 mb-3"></i>
+                            <h4 class="text-xl font-bold text-white">Ekonomi</h4>
+                            <p class="text-sm text-gray-300 mt-2">Prinsip dasar, pasar, dan kebijakan fiskal.</p>
+                            <button onclick="showContent('materi-ekonomi')" class="mt-4 w-full py-2 bg-blue-700/50 text-white font-semibold rounded-lg hover:bg-blue-600 transition duration-150">
+                                Mulai Belajar
+                            </button>
+                        </div>
+                        
+                        <div class="subject-card bg-white/10 backdrop-blur-sm p-6 rounded-xl shadow-xl border border-white/20 transform hover:scale-[1.03] transition duration-200">
+                            <i data-lucide="map" class="w-8 h-8 text-teal-300 mb-3"></i>
+                            <h4 class="text-xl font-bold text-white">Geografi</h4>
+                            <p class="text-sm text-gray-300 mt-2">Interaksi manusia, ruang, dan lingkungan fisik.</p>
+                            <button onclick="showContent('materi-geografi')" class="mt-4 w-full py-2 bg-teal-700/50 text-white font-semibold rounded-lg hover:bg-teal-600 transition duration-150">
+                                Mulai Belajar
+                            </button>
+                        </div>
+                        
+                        <div class="subject-card bg-white/10 backdrop-blur-sm p-6 rounded-xl shadow-xl border border-white/20 transform hover:scale-[1.03] transition duration-200">
+                            <i data-lucide="cpu" class="w-8 h-8 text-slate-300 mb-3"></i>
+                            <h4 class="text-xl font-bold text-white">Informatika</h4>
+                            <p class="text-sm text-gray-300 mt-2">Logika, algoritma, dan dasar pemrograman.</p>
+                            <button onclick="showContent('materi-informatika')" class="mt-4 w-full py-2 bg-slate-700/50 text-white font-semibold rounded-lg hover:bg-slate-600 transition duration-150">
+                                Mulai Belajar
+                            </button>
+                        </div>
+                        
+                        <div class="subject-card bg-white/10 backdrop-blur-sm p-6 rounded-xl shadow-xl border border-white/20 transform hover:scale-[1.03] transition duration-200">
+                            <i data-lucide="users" class="w-8 h-8 text-rose-300 mb-3"></i>
+                            <h4 class="text-xl font-bold text-white">Sosiologi</h4>
+                            <p class="text-sm text-gray-300 mt-2">Struktur, interaksi, dan masalah sosial.</p>
+                            <button onclick="showContent('materi-sosiologi')" class="mt-4 w-full py-2 bg-rose-700/50 text-white font-semibold rounded-lg hover:bg-rose-600 transition duration-150">
+                                Mulai Belajar
+                            </button>
+                        </div>
+                        
+                        <div class="subject-card bg-white/10 backdrop-blur-sm p-6 rounded-xl shadow-xl border border-white/20 transform hover:scale-[1.03] transition duration-200">
+                            <i data-lucide="landmark" class="w-8 h-8 text-amber-300 mb-3"></i>
+                            <h4 class="text-xl font-bold text-white">Antropologi</h4>
+                            <p class="text-sm text-gray-300 mt-2">Studi budaya, evolusi, dan keragaman manusia.</p>
+                            <button onclick="showContent('materi-antropologi')" class="mt-4 w-full py-2 bg-amber-700/50 text-white font-semibold rounded-lg hover:bg-amber-600 transition duration-150">
+                                Mulai Belajar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div id="content-tryout" class="page-content hidden">
+                    <h3 class="text-2xl font-semibold text-purple-300 mb-6 flex items-center">
+                        <i data-lucide="award" class="w-6 h-6 mr-2"></i> Pilih Jenis Tryout
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        
+                        <div class="subject-card bg-white/10 backdrop-blur-sm p-6 rounded-xl shadow-xl border border-white/20">
+                            <i data-lucide="calendar" class="w-8 h-8 text-pink-300 mb-3"></i>
+                            <h4 class="text-xl font-bold text-white">Tryout Harian</h4>
+                            <p class="text-sm text-gray-300 mt-2">Soal acak dari berbagai bab, cocok untuk review cepat.</p>
+                            <button onclick="showTryoutModal('Tryout Harian', 'Soal 20 butir, waktu 30 menit, mencakup 3 mapel acak.')" 
+                                class="mt-4 w-full py-2 bg-pink-600 text-white font-semibold rounded-lg hover:bg-pink-700 transition duration-150">
+                                Mulai Tryout
+                            </button>
+                        </div>
+                        
+                        <div class="subject-card bg-white/10 backdrop-blur-sm p-6 rounded-xl shadow-xl border border-white/20">
+                            <i data-lucide="graduation-cap" class="w-8 h-8 text-cyan-300 mb-3"></i>
+                            <h4 class="text-xl font-bold text-white">UTBK/SNBT Simulasi</h4>
+                            <p class="text-sm text-gray-300 mt-2">Simulasi penuh untuk menguji ketahanan Anda seperti ujian sesungguhnya.</p>
+                            <button onclick="showTryoutModal('UTBK/SNBT Simulasi', 'Soal 120 butir, waktu 195 menit, mencakup TPS &amp; Literasi.')" 
+                                class="mt-4 w-full py-2 bg-cyan-600 text-white font-semibold rounded-lg hover:bg-cyan-700 transition duration-150">
+                                Mulai Tryout
+                            </button>
+                        </div>
+                        
+                        <div class="subject-card bg-white/10 backdrop-blur-sm p-6 rounded-xl shadow-xl border border-white/20">
+                            <i data-lucide="book-marked" class="w-8 h-8 text-orange-300 mb-3"></i>
+                            <h4 class="text-xl font-bold text-white">Tryout Khusus Bab</h4>
+                            <p class="text-sm text-gray-300 mt-2">Pilih satu bab materi untuk fokus dan pendalaman.</p>
+                            <button onclick="navigate('tryout-selection')" 
+                                class="mt-4 w-full py-2 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700 transition duration-150">
+                                Pilih Bab
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                
+                <div id="content-tryout-selection" class="page-content hidden bg-white/20 backdrop-blur-md p-6 rounded-xl shadow-lg border border-white/20 text-white">
+                    <h3 class="text-2xl font-bold text-orange-300 mb-6 flex items-center">
+                        <i data-lucide="list-filter" class="w-6 h-6 mr-2"></i> Pilih Mata Pelajaran &amp; Bab
+                    </h3>
+                    <p class="text-gray-200 mb-4">Silakan pilih mata pelajaran, lalu klik untuk melihat daftar bab yang tersedia untuk tryout.</p>
+                    
+                    <div id="tryout-selection-container" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        
+                    </div>
+                    
+                    <button onclick="navigate('tryout')" class="mt-6 py-2 px-4 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition duration-150 flex items-center">
+                        <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i> Kembali ke Menu Tryout
+                    </button>
+                </div>
+
+
+                
+                
+                <!-- BIOLOGI -->
+                <div id="materi-biologi" class="page-content hidden bg-white/20 backdrop-blur-md p-6 rounded-xl shadow-lg border border-white/20 text-white">
+                    <h3 class="text-2xl font-bold text-green-300 mb-4 flex items-center"><i data-lucide="leaf" class="w-6 h-6 mr-2"></i> Materi Biologi: Dunia Kehidupan</h3>
+                    <p class="text-gray-200 mb-4">
+                        Biologi adalah ilmu yang mempelajari kehidupan dan organisme hidup. Dari mikroskopis hingga ekosistem global,
+                        pelajari bagaimana makhluk hidup berfungsi, bereproduksi, dan berinteraksi.
+                    </p>
+                    
+                    <div class="mt-6 space-y-3" id="biologi-accordion">
+                        <div class="rounded-xl bg-white/10 overflow-hidden border border-white/20">
+                            <button class="accordion-header w-full flex justify-between items-center p-4 text-left font-semibold hover:bg-white/20 transition duration-150" onclick="toggleAccordion('biologi-item-1')">
+                                <span>1. Struktur dan Fungsi Sel</span>
+                                <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-300 transform" id="biologi-icon-1"></i>
+                            </button>
+                            <div id="biologi-item-1" class="accordion-content h-0 overflow-hidden transition-all duration-300" style="height: 0;">
+                                <div class="p-4 pt-0 text-gray-200">
+                                    <p class="mb-3">Mempelajari komponen sel (prokariotik dan eukariotik) dan fungsinya masing-masing.</p>
+                                    <!-- LINK YOUTUBE BIOLOGI 1 -->
+                                    <a href="https://youtu.be/Xxm6xtjsFx0?si=S8QuIiwD6ksuzXCm" target="_blank" class="inline-flex items-center text-sm px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition shadow-md">
+                                        <i data-lucide="youtube" class="w-4 h-4 mr-2"></i> Tonton Video
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="rounded-xl bg-white/10 overflow-hidden border border-white/20">
+                            <button class="accordion-header w-full flex justifyBetween items-center p-4 text-left font-semibold hover:bg-white/20 transition duration-150" onclick="toggleAccordion('biologi-item-2')">
+                                <span>2. Sistem Organ pada Manusia</span>
+                                <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-300 transform" id="biologi-icon-2"></i>
+                            </button>
+                            <div id="biologi-item-2" class="accordion-content h-0 overflow-hidden transition-all duration-300" style="height: 0;">
+                                <div class="p-4 pt-0 text-gray-200">
+                                    <p class="mb-3">Fokus pada sistem pernapasan, pencernaan, sirkulasi, dan ekskresi.</p>
+                                    <!-- LINK YOUTUBE BIOLOGI 2 (UPDATED MULTIPLE) -->
+                                    <div class="flex flex-wrap gap-2">
+                                        <a href="https://youtu.be/N6oly45yK6A?si=S6LDrPrDXz1pCVCU" target="_blank" class="inline-flex items-center text-sm px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition shadow-md">
+                                            <i data-lucide="youtube" class="w-4 h-4 mr-2"></i> Video 1
+                                        </a>
+                                        <a href="https://youtu.be/mqwj6eqIyuA?si=kpEEltWIPvVygi78" target="_blank" class="inline-flex items-center text-sm px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition shadow-md">
+                                            <i data-lucide="youtube" class="w-4 h-4 mr-2"></i> Video 2
+                                        </a>
+                                        <a href="https://youtu.be/N0PS9OpNgvo?si=6TQ-WfUUiLJ6IuDN" target="_blank" class="inline-flex items-center text-sm px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition shadow-md">
+                                            <i data-lucide="youtube" class="w-4 h-4 mr-2"></i> Video 3
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="rounded-xl bg-white/10 overflow-hidden border border-white/20">
+                            <button class="accordion-header w-full flex justify-between items-center p-4 text-left font-semibold hover:bg-white/20 transition duration-150" onclick="toggleAccordion('biologi-item-3')">
+                                <span>3. Pewarisan Sifat (Genetika)</span>
+                                <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-300 transform" id="biologi-icon-3"></i>
+                            </button>
+                            <div id="biologi-item-3" class="accordion-content h-0 overflow-hidden transition-all duration-300" style="height: 0;">
+                                <div class="p-4 pt-0 text-gray-200">
+                                    <p class="mb-3">Mendalami hukum Mendel, DNA, RNA, dan sintesis protein.</p>
+                                    <!-- LINK YOUTUBE BIOLOGI 3 (UPDATED) -->
+                                    <a href="https://youtu.be/pRLzqHAWTcs?si=6XOaLbBkb3tGB1ne" target="_blank" class="inline-flex items-center text-sm px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition shadow-md">
+                                        <i data-lucide="youtube" class="w-4 h-4 mr-2"></i> Tonton Video
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    
+                    <div class="mt-8 border-t border-gray-600 pt-6">
+                        <h4 class="text-xl font-bold text-indigo-300 mb-4 flex items-center">
+                            <i data-lucide="message-square" class="w-6 h-6 mr-2"></i> Tanya dengan Tentor Biologi 👩‍🏫
+                        </h4>
+                        <p class="text-sm text-gray-400 mb-4">Tanyakan langsung soal, konsep yang sulit, atau minta tips belajar. Tentor Biologi siap membantu!</p>
+                        
+                        
+                        <div id="biologi-chat-interface" class="flex flex-col h-96 bg-gray-100 rounded-lg shadow-inner overflow-hidden">
+                            <div id="biologi-chat-box" class="flex-grow p-4 overflow-y-auto space-y-2">
+                                
+                                <div class="tentor-message chat-message">Halo! Ada kesulitan apa di Biologi? Saya siap membantu.</div>
+                            </div>
+                            <div class="flex p-3 bg-white border-t border-gray-200">
+                                <input type="text" id="biologi-input-chat" placeholder="Ketik pertanyaan Anda di sini..." class="flex-grow px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-indigo-500 focus:border-indigo-500 text-gray-900">
+                                <button onclick="sendTentorMessage('Biologi')" class="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-r-lg hover:bg-indigo-700 transition duration-150 flex items-center">
+                                    <i data-lucide="send" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="navigate('materi')" class="mt-6 py-2 px-4 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition duration-150 flex items-center">
+                        <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i> Kembali ke Pilihan Materi
+                    </button>
+                </div>
+                
+                
+                <!-- MATEMATIKA -->
+                <div id="materi-matematika" class="page-content hidden bg-white/20 backdrop-blur-md p-6 rounded-xl shadow-lg border border-white/20 text-white">
+                    <h3 class="text-2xl font-bold text-red-300 mb-4 flex items-center"><i data-lucide="bar-chart-3" class="w-6 h-6 mr-2"></i> Materi Matematika: Logika dan Angka</h3>
+                    <p class="text-gray-200 mb-4">
+                        Matematika adalah bahasa alam semesta. Pelajari cara berpikir logis, memecahkan masalah kompleks,
+                        dan mengaplikasikan kalkulus untuk memahami perubahan.
+                    </p>
+                    
+                    <div class="mt-6 space-y-3" id="matematika-accordion">
+                        <div class="rounded-xl bg-white/10 overflow-hidden border border-white/20">
+                            <button class="accordion-header w-full flex justify-between items-center p-4 text-left font-semibold hover:bg-white/20 transition duration-150" onclick="toggleAccordion('matematika-item-1')">
+                                <span>1. Trigonometri dan Geometri</span>
+                                <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-300 transform" id="matematika-icon-1"></i>
+                            </button>
+                            <div id="matematika-item-1" class="accordion-content h-0 overflow-hidden transition-all duration-300" style="height: 0;">
+                                <div class="p-4 pt-0 text-gray-200">
+                                    <p class="mb-3">Membahas sinus, cosinus, tangen, dan sifat-sifat bangun datar serta ruang.</p>
+                                    <!-- LINK YOUTUBE MATEMATIKA 1 (UPDATED) -->
+                                    <a href="https://youtu.be/ERCGYJiw2l4?si=JfAiqzljlTopHnGg" target="_blank" class="inline-flex items-center text-sm px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition shadow-md">
+                                        <i data-lucide="youtube" class="w-4 h-4 mr-2"></i> Tonton Video
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="rounded-xl bg-white/10 overflow-hidden border border-white/20">
+                            <button class="accordion-header w-full flex justify-between items-center p-4 text-left font-semibold hover:bg-white/20 transition duration-150" onclick="toggleAccordion('matematika-item-2')">
+                                <span>2. Kalkulus (Limit, Turunan, Integral)</span>
+                                <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-300 transform" id="matematika-icon-2"></i>
+                            </button>
+                            <div id="matematika-item-2" class="accordion-content h-0 overflow-hidden transition-all duration-300" style="height: 0;">
+                                <div class="p-4 pt-0 text-gray-200">
+                                    <p class="mb-3">Konsep dasar kalkulus untuk menganalisis perubahan dan gerak.</p>
+                                    <!-- LINK YOUTUBE MATEMATIKA 2 (UPDATED) -->
+                                    <a href="https://youtu.be/em1FzuA1_Nc?si=F4d6R-fVImf4RO64" target="_blank" class="inline-flex items-center text-sm px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition shadow-md">
+                                        <i data-lucide="youtube" class="w-4 h-4 mr-2"></i> Tonton Video
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="rounded-xl bg-white/10 overflow-hidden border border-white/20">
+                            <button class="accordion-header w-full flex justify-between items-center p-4 text-left font-semibold hover:bg-white/20 transition duration-150" onclick="toggleAccordion('matematika-item-3')">
+                                <span>3. Statistika dan Peluang</span>
+                                <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-300 transform" id="matematika-icon-3"></i>
+                            </button>
+                            <div id="matematika-item-3" class="accordion-content h-0 overflow-hidden transition-all duration-300" style="height: 0;">
+                                <div class="p-4 pt-0 text-gray-200">
+                                    <p class="mb-3">Analisis data, mean, median, modus, dan teori probabilitas.</p>
+                                    <!-- LINK YOUTUBE MATEMATIKA 3 (UPDATED) -->
+                                    <a href="https://youtu.be/TbRFsxrujQI?si=m33UwgXe1cFbtoZP" target="_blank" class="inline-flex items-center text-sm px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition shadow-md">
+                                        <i data-lucide="youtube" class="w-4 h-4 mr-2"></i> Tonton Video
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    
+                    <div class="mt-8 border-t border-gray-600 pt-6">
+                        <h4 class="text-xl font-bold text-indigo-300 mb-4 flex items-center">
+                            <i data-lucide="message-square" class="w-6 h-6 mr-2"></i> Tanya dengan Tentor Matematika 👨‍🏫
+                        </h4>
+                        <p class="text-sm text-gray-400 mb-4">Tanyakan langsung soal, konsep yang sulit, atau minta tips belajar. Tentor Matematika siap membantu!</p>
+                        
+                        
+                        <div id="matematika-chat-interface" class="flex flex-col h-96 bg-gray-100 rounded-lg shadow-inner overflow-hidden">
+                            <div id="matematika-chat-box" class="flex-grow p-4 overflow-y-auto space-y-2">
+                                
+                                <div class="tentor-message chat-message">Selamat sore! Ada soal Matematika yang perlu dibahas?</div>
+                            </div>
+                            <div class="flex p-3 bg-white border-t border-gray-200">
+                                <input type="text" id="matematika-input-chat" placeholder="Ketik pertanyaan Anda di sini..." class="flex-grow px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-indigo-500 focus:border-indigo-500 text-gray-900">
+                                <button onclick="sendTentorMessage('Matematika')" class="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-r-lg hover:bg-indigo-700 transition duration-150 flex items-center">
+                                    <i data-lucide="send" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="navigate('materi')" class="mt-6 py-2 px-4 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition duration-150 flex items-center">
+                        <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i> Kembali ke Pilihan Materi
+                    </button>
+                </div>
+                
+                
+                <!-- KIMIA -->
+                <div id="materi-kimia" class="page-content hidden bg-white/20 backdrop-blur-md p-6 rounded-xl shadow-lg border border-white/20 text-white">
+                    <h3 class="text-2xl font-bold text-indigo-300 mb-4 flex items-center"><i data-lucide="flask-conical" class="w-6 h-6 mr-2"></i> Materi Kimia: Dunia Atom dan Reaksi</h3>
+                    <p class="text-gray-200 mb-4">
+                        Kimia adalah studi tentang materi dan bagaimana ia berinteraksi. Pahami dunia di sekitar Anda
+                        dari level atom hingga senyawa kompleks.
+                    </p>
+                    
+                    
+                    <div class="mt-6 space-y-3" id="kimia-accordion">
+                        
+                        
+                        <div class="rounded-xl bg-white/10 overflow-hidden border border-white/20">
+                            <button class="accordion-header w-full flex justify-between items-center p-4 text-left font-semibold hover:bg-white/20 transition duration-150" onclick="toggleAccordion('kimia-item-1')">
+                                <span>1. Ikatan Kimia dan Struktur Atom</span>
+                                <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-300 transform" id="kimia-icon-1"></i>
+                            </button>
+                            <div id="kimia-item-1" class="accordion-content h-0 overflow-hidden transition-all duration-300" style="height: 0;">
+                                <div class="p-4 pt-0 text-gray-200">
+                                    <p class="mb-3">Pelajari bagaimana atom-atom bergabung membentuk molekul (kovalen, ionik) dan struktur dasar atom (proton, neutron, elektron).</p>
+                                    <!-- LINK YOUTUBE KIMIA 1 (UPDATED) -->
+                                    <a href="https://youtu.be/hifilq6pzGk?si=KkcSc8MnGJRMx95T" target="_blank" class="inline-flex items-center text-sm px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition shadow-md">
+                                        <i data-lucide="youtube" class="w-4 h-4 mr-2"></i> Tonton Video
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        
+                        <div class="rounded-xl bg-white/10 overflow-hidden border border-white/20">
+                            <button class="accordion-header w-full flex justify-between items-center p-4 text-left font-semibold hover:bg-white/20 transition duration-150" onclick="toggleAccordion('kimia-item-2')">
+                                <span>2. Stoikiometri dan Konsep Mol</span>
+                                <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-300 transform" id="kimia-icon-2"></i>
+                            </button>
+                            <div id="kimia-item-2" class="accordion-content h-0 overflow-hidden transition-all duration-300" style="height: 0;">
+                                <div class="p-4 pt-0 text-gray-200">
+                                    <p class="mb-3">Fokus pada perhitungan kuantitatif reaksi kimia, meliputi konsep massa molar, volume molar, dan pereaksi pembatas.</p>
+                                    <!-- LINK YOUTUBE KIMIA 2 (UPDATED MULTIPLE) -->
+                                    <div class="flex flex-wrap gap-2">
+                                        <a href="https://youtu.be/z96_eP5lzRU?si=FLMVli3SNsuMXY3w" target="_blank" class="inline-flex items-center text-sm px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition shadow-md">
+                                            <i data-lucide="youtube" class="w-4 h-4 mr-2"></i> Video 1
+                                        </a>
+                                        <a href="https://youtu.be/GMBYezA0t_8?si=1eegYv3uodcIW6PK" target="_blank" class="inline-flex items-center text-sm px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition shadow-md">
+                                            <i data-lucide="youtube" class="w-4 h-4 mr-2"></i> Video 2
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        
+                        <div class="rounded-xl bg-white/10 overflow-hidden border border-white/20">
+                            <button class="accordion-header w-full flex justify-between items-center p-4 text-left font-semibold hover:bg-white/20 transition duration-150" onclick="toggleAccordion('kimia-item-3')">
+                                <span>3. Laju Reaksi dan Kesetimbangan</span>
+                                <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-300 transform" id="kimia-icon-3"></i>
+                            </button>
+                            <div id="kimia-item-3" class="accordion-content h-0 overflow-hidden transition-all duration-300" style="height: 0;">
+                                <div class="p-4 pt-0 text-gray-200">
+                                    <p class="mb-3">Menggali faktor-faktor yang mempengaruhi kecepatan reaksi dan kondisi tercapainya keadaan setimbang (Azas Le Chatelier).</p>
+                                    <!-- LINK YOUTUBE KIMIA 3 (UPDATED MULTIPLE) -->
+                                    <div class="flex flex-wrap gap-2">
+                                        <a href="https://youtu.be/gAvNpdRA9lY?si=2vTkhzVx7ZH1_4xP" target="_blank" class="inline-flex items-center text-sm px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition shadow-md">
+                                            <i data-lucide="youtube" class="w-4 h-4 mr-2"></i> Video 1
+                                        </a>
+                                        <a href="https://youtu.be/4jYDfRabi3M?si=DWHWnIHWHlC-9k8N" target="_blank" class="inline-flex items-center text-sm px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition shadow-md">
+                                            <i data-lucide="youtube" class="w-4 h-4 mr-2"></i> Video 2
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+
+                    
+                    <div class="mt-8 border-t border-gray-600 pt-6">
+                        <h4 class="text-xl font-bold text-indigo-300 mb-4 flex items-center">
+                            <i data-lucide="message-square" class="w-6 h-6 mr-2"></i> Tanya dengan Tentor Kimia 🧪
+                        </h4>
+                        <p class="text-sm text-gray-400 mb-4">Tanyakan langsung soal, konsep yang sulit, atau minta tips belajar. Tentor Kimia siap membantu!</p>
+                        
+                        
+                        <div id="kimia-chat-interface" class="flex flex-col h-96 bg-gray-100 rounded-lg shadow-inner overflow-hidden">
+                            <div id="kimia-chat-box" class="flex-grow p-4 overflow-y-auto space-y-2">
+                                
+                                <div class="tentor-message chat-message">Selamat datang di sesi Kimia. Apa yang bisa saya bantu hari ini?</div>
+                            </div>
+                            <div class="flex p-3 bg-white border-t border-gray-200">
+                                <input type="text" id="kimia-input-chat" placeholder="Ketik pertanyaan Anda di sini..." class="flex-grow px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-indigo-500 focus:border-indigo-500 text-gray-900">
+                                <button onclick="sendTentorMessage('Kimia')" class="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-r-lg hover:bg-indigo-700 transition duration-150 flex items-center">
+                                    <i data-lucide="send" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="navigate('materi')" class="mt-6 py-2 px-4 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition duration-150 flex items-center">
+                        <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i> Kembali ke Pilihan Materi
+                    </button>
+                </div>
+
+                
+                <!-- FISIKA -->
+                <div id="materi-fisika" class="page-content hidden bg-white/20 backdrop-blur-md p-6 rounded-xl shadow-lg border border-white/20 text-white">
+                    <h3 class="text-2xl font-bold text-yellow-300 mb-4 flex items-center"><i data-lucide="bolt" class="w-6 h-6 mr-2"></i> Materi Fisika: Hukum Alam</h3>
+                    <p class="text-gray-200 mb-4">
+                        Fisika adalah ilmu yang mempelajari energi, materi, ruang, dan waktu. Pahami bagaimana alam bekerja
+                        melalui eksperimen dan perhitungan.
+                    </p>
+                    
+                    <div class="mt-6 space-y-3" id="fisika-accordion">
+                        <div class="rounded-xl bg-white/10 overflow-hidden border border-white/20">
+                            <button class="accordion-header w-full flex justify-between items-center p-4 text-left font-semibold hover:bg-white/20 transition duration-150" onclick="toggleAccordion('fisika-item-1')">
+                                <span>1. Mekanika Klasik (Gerak dan Gaya)</span>
+                                <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-300 transform" id="fisika-icon-1"></i>
+                            </button>
+                            <div id="fisika-item-1" class="accordion-content h-0 overflow-hidden transition-all duration-300" style="height: 0;">
+                                <div class="p-4 pt-0 text-gray-200">
+                                    <p class="mb-3">Mempelajari Hukum Newton, energi, momentum, dan gerak parabola.</p>
+                                    <!-- LINK YOUTUBE FISIKA 1 (UPDATED) -->
+                                    <a href="https://youtu.be/3YCRAse9irs?si=M4sg7b7051lTQ_OK" target="_blank" class="inline-flex items-center text-sm px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition shadow-md">
+                                        <i data-lucide="youtube" class="w-4 h-4 mr-2"></i> Tonton Video
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="rounded-xl bg-white/10 overflow-hidden border border-white/20">
+                            <button class="accordion-header w-full flex justify-between items-center p-4 text-left font-semibold hover:bg-white/20 transition duration-150" onclick="toggleAccordion('fisika-item-2')">
+                                <span>2. Termodinamika</span>
+                                <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-300 transform" id="fisika-icon-2"></i>
+                            </button>
+                            <div id="fisika-item-2" class="accordion-content h-0 overflow-hidden transition-all duration-300" style="height: 0;">
+                                <div class="p-4 pt-0 text-gray-200">
+                                    <p class="mb-3">Studi tentang panas, kerja, dan energi, serta hukum-hukum yang mengaturnya.</p>
+                                    <!-- LINK YOUTUBE FISIKA 2 (UPDATED) -->
+                                    <a href="https://youtu.be/KV7Otw-du0Y?si=q7QFK5dclMe6vWa9" target="_blank" class="inline-flex items-center text-sm px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition shadow-md">
+                                        <i data-lucide="youtube" class="w-4 h-4 mr-2"></i> Tonton Video
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="rounded-xl bg-white/10 overflow-hidden border border-white/20">
+                            <button class="accordion-header w-full flex justify-between items-center p-4 text-left font-semibold hover:bg-white/20 transition duration-150" onclick="toggleAccordion('fisika-item-3')">
+                                <span>3. Gelombang dan Optik</span>
+                                <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-300 transform" id="fisika-icon-3"></i>
+                            </button>
+                            <div id="fisika-item-3" class="accordion-content h-0 overflowHidden transition-all duration-300" style="height: 0;">
+                                <div class="p-4 pt-0 text-gray-200">
+                                    <p class="mb-3">Membahas sifat gelombang, suara, cahaya, dan alat-alat optik.</p>
+                                    <!-- LINK YOUTUBE FISIKA 3 (UPDATED MULTIPLE) -->
+                                    <div class="flex flex-wrap gap-2">
+                                        <a href="https://youtu.be/xyAF6g5PjvY?si=F0gTl3w9-ZVzWhGl" target="_blank" class="inline-flex items-center text-sm px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition shadow-md">
+                                            <i data-lucide="youtube" class="w-4 h-4 mr-2"></i> Video 1
+                                        </a>
+                                        <a href="https://youtu.be/RbBnsSugax4?si=1wN8_q2F7QtcFok8" target="_blank" class="inline-flex items-center text-sm px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition shadow-md">
+                                            <i data-lucide="youtube" class="w-4 h-4 mr-2"></i> Video 2
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    
+                    <div class="mt-8 border-t border-gray-600 pt-6">
+                        <h4 class="text-xl font-bold text-indigo-300 mb-4 flex items-center">
+                            <i data-lucide="message-square" class="w-6 h-6 mr-2"></i> Tanya dengan Tentor Fisika ⚛️
+                        </h4>
+                        <p class="text-sm text-gray-400 mb-4">Tanyakan langsung soal, konsep yang sulit, atau minta tips belajar. Tentor Fisika siap membantu!</p>
+                        
+                        
+                        <div id="fisika-chat-interface" class="flex flex-col h-96 bg-gray-100 rounded-lg shadow-inner overflow-hidden">
+                            <div id="fisika-chat-box" class="flex-grow p-4 overflow-y-auto space-y-2">
+                                
+                                <div class="tentor-message chat-message">Hai, Tentor Fisika di sini. Fokus kita hari ini apa?</div>
+                            </div>
+                            <div class="flex p-3 bg-white border-t border-gray-200">
+                                <input type="text" id="fisika-input-chat" placeholder="Ketik pertanyaan Anda di sini..." class="flex-grow px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-indigo-500 focus:border-indigo-500 text-gray-900">
+                                <button onclick="sendTentorMessage('Fisika')" class="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-r-lg hover:bg-indigo-700 transition duration-150 flex items-center">
+                                    <i data-lucide="send" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="navigate('materi')" class="mt-6 py-2 px-4 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition duration-150 flex items-center">
+                        <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i> Kembali ke Pilihan Materi
+                    </button>
+                </div>
+
+                
+                <!-- EKONOMI -->
+                <div id="materi-ekonomi" class="page-content hidden bg-white/20 backdrop-blur-md p-6 rounded-xl shadow-lg border border-white/20 text-white">
+                    <h3 class="text-2xl font-bold text-blue-300 mb-4 flex items-center"><i data-lucide="trending-up" class="w-6 h-6 mr-2"></i> Materi Ekonomi: Pasar dan Uang</h3>
+                    <p class="text-gray-200 mb-4">
+                        Ekonomi adalah ilmu yang mempelajari bagaimana individu dan masyarakat mengelola sumber daya yang terbatas.
+                    </p>
+                    
+                    <div class="mt-6 space-y-3" id="ekonomi-accordion">
+                        <div class="rounded-xl bg-white/10 overflow-hidden border border-white/20">
+                            <button class="accordion-header w-full flex justify-between items-center p-4 text-left font-semibold hover:bg-white/20 transition duration-150" onclick="toggleAccordion('ekonomi-item-1')">
+                                <span>1. Prinsip Ekonomi Mikro dan Makro</span>
+                                <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-300 transform" id="ekonomi-icon-1"></i>
+                            </button>
+                            <div id="ekonomi-item-1" class="accordion-content h-0 overflow-hidden transition-all duration-300" style="height: 0;">
+                                <div class="p-4 pt-0 text-gray-200">
+                                    <p class="mb-3">Perbedaan dan ruang lingkup ekonomi mikro (individu, perusahaan) dan makro (negara).</p>
+                                    <!-- LINK YOUTUBE EKONOMI 1 (UPDATED) -->
+                                    <a href="https://youtu.be/qMYEwjg02dY?si=mbpsrPyfa7nH8Rjk" target="_blank" class="inline-flex items-center text-sm px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition shadow-md">
+                                        <i data-lucide="youtube" class="w-4 h-4 mr-2"></i> Tonton Video
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="rounded-xl bg-white/10 overflow-hidden border border-white/20">
+                            <button class="accordion-header w-full flex justify-between items-center p-4 text-left font-semibold hover:bg-white/20 transition duration-150" onclick="toggleAccordion('ekonomi-item-2')">
+                                <span>2. Permintaan, Penawaran, dan Pasar</span>
+                                <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-300 transform" id="ekonomi-icon-2"></i>
+                            </button>
+                            <div id="ekonomi-item-2" class="accordion-content h-0 overflow-hidden transition-all duration-300" style="height: 0;">
+                                <div class="p-4 pt-0 text-gray-200">
+                                    <p class="mb-3">Analisis kurva permintaan dan penawaran serta terbentuknya harga keseimbangan.</p>
+                                    <!-- LINK YOUTUBE EKONOMI 2 (UPDATED) -->
+                                   <a href="https://youtu.be/JYp70RQnDwM?si=J0eqvGXNiM9GAMNa" target="_blank" class="inline-flex items-center text-sm px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition shadow-md">
+                                            <i data-lucide="youtube" class="w-4 h-4 mr-2"></i> Tonton Video
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    
+                    <div class="mt-8 border-t border-gray-600 pt-6">
+                        <h4 class="text-xl font-bold text-indigo-300 mb-4 flex items-center">
+                            <i data-lucide="message-square" class="w-6 h-6 mr-2"></i> Tanya dengan Tentor Ekonomi 📈
+                        </h4>
+                        <p class="text-sm text-gray-400 mb-4">Tanyakan tentang inflasi, pasar saham, atau konsep ekonomi lainnya.</p>
+                        
+                        
+                        <div id="ekonomi-chat-interface" class="flex flex-col h-96 bg-gray-100 rounded-lg shadow-inner overflow-hidden">
+                            <div id="ekonomi-chat-box" class="flex-grow p-4 overflow-y-auto space-y-2">
+                                
+                                <div class="tentor-message chat-message">Halo! Ada konsep ekonomi yang membuatmu bingung?</div>
+                            </div>
+                            <div class="flex p-3 bg-white border-t border-gray-200">
+                                <input type="text" id="ekonomi-input-chat" placeholder="Ketik pertanyaan Anda di sini..." class="flex-grow px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-indigo-500 focus:border-indigo-500 text-gray-900">
+                                <button onclick="sendTentorMessage('Ekonomi')" class="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-r-lg hover:bg-indigo-700 transition duration-150 flex items-center">
+                                    <i data-lucide="send" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="navigate('materi')" class="mt-6 py-2 px-4 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition duration-150 flex items-center">
+                        <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i> Kembali ke Pilihan Materi
+                    </button>
+                </div>
+
+                
+                <!-- GEOGRAFI -->
+                <div id="materi-geografi" class="page-content hidden bg-white/20 backdrop-blur-md p-6 rounded-xl shadow-lg border border-white/20 text-white">
+                    <h3 class="text-2xl font-bold text-teal-300 mb-4 flex items-center"><i data-lucide="map" class="w-6 h-6 mr-2"></i> Materi Geografi: Bumi dan Manusia</h3>
+                    <p class="text-gray-200 mb-4">
+                        Geografi mempelajari hubungan keruangan antara manusia dan lingkungannya di permukaan bumi.
+                    </p>
+                    
+                    <div class="mt-6 space-y-3" id="geografi-accordion">
+                        <div class="rounded-xl bg-white/10 overflow-hidden border border-white/20">
+                            <button class="accordion-header w-full flex justify-between items-center p-4 text-left font-semibold hover:bg-white/20 transition duration-150" onclick="toggleAccordion('geografi-item-1')">
+                                <span>1. Litosfer, Atmosfer, dan Hidrosfer</span>
+                                <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-300 transform" id="geografi-icon-1"></i>
+                            </button>
+                            <div id="geografi-item-1" class="accordion-content h-0 overflow-hidden transition-all duration-300" style="height: 0;">
+                                <div class="p-4 pt-0 text-gray-200">
+                                    <p class="mb-3">Studi tentang lapisan bumi, cuaca dan iklim, serta siklus air.</p>
+                                    <!-- LINK YOUTUBE GEOGRAFI 1 (UPDATED) -->
+                                    <a href="https://youtu.be/DonMPKoeCzw?si=4nNTwKJlpDr-uGrN" target="_blank" class="inline-flex items-center text-sm px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition shadow-md">
+                                        <i data-lucide="youtube" class="w-4 h-4 mr-2"></i> Tonton Video
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="rounded-xl bg-white/10 overflow-hidden border border-white/20">
+                            <button class="accordion-header w-full flex justify-between items-center p-4 text-left font-semibold hover:bg-white/20 transition duration-150" onclick="toggleAccordion('geografi-item-2')">
+                                <span>2. Dinamika Kependudukan</span>
+                                <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-300 transform" id="geografi-icon-2"></i>
+                            </button>
+                            <div id="geografi-item-2" class="accordion-content h-0 overflow-hidden transition-all duration-300" style="height: 0;">
+                                <div class="p-4 pt-0 text-gray-200">
+                                    <p class="mb-3">Membahas pertumbuhan, persebaran, dan komposisi penduduk.</p>
+                                    <!-- LINK YOUTUBE GEOGRAFI 2 (UPDATED) -->
+                                    <a href="https://youtu.be/RkYD7nxrOIA?si=xlRTK5f__PPGx9wE" target="_blank" class="inline-flex items-center text-sm px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition shadow-md">
+                                        <i data-lucide="youtube" class="w-4 h-4 mr-2"></i> Tonton Video
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    
+                    <div class="mt-8 border-t border-gray-600 pt-6">
+                        <h4 class="text-xl font-bold text-indigo-300 mb-4 flex items-center">
+                            <i data-lucide="message-square" class="w-6 h-6 mr-2"></i> Tanya dengan Tentor Geografi 🗺️
+                        </h4>
+                        <p class="text-sm text-gray-400 mb-4">Tanyakan tentang fenomena alam, peta, atau interaksi manusia dan lingkungan.</p>
+                        
+                        
+                        <div id="geografi-chat-interface" class="flex flex-col h-96 bg-gray-100 rounded-lg shadow-inner overflow-hidden">
+                            <div id="geografi-chat-box" class="flex-grow p-4 overflow-y-auto space-y-2">
+                                
+                                <div class="tentor-message chat-message">Selamat datang! Mari kita jelajahi dunia bersama. Ada yang ingin ditanyakan?</div>
+                            </div>
+                            <div class="flex p-3 bg-white border-t border-gray-200">
+                                <input type="text" id="geografi-input-chat" placeholder="Ketik pertanyaan Anda di sini..." class="flex-grow px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-indigo-500 focus:border-indigo-500 text-gray-900">
+                                <button onclick="sendTentorMessage('Geografi')" class="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-r-lg hover:bg-indigo-700 transition duration-150 flex items-center">
+                                    <i data-lucide="send" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="navigate('materi')" class="mt-6 py-2 px-4 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition duration-150 flex items-center">
+                        <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i> Kembali ke Pilihan Materi
+                    </button>
+                </div>
+
+                
+                <!-- INFORMATIKA -->
+                <div id="materi-informatika" class="page-content hidden bg-white/20 backdrop-blur-md p-6 rounded-xl shadow-lg border border-white/20 text-white">
+                    <h3 class="text-2xl font-bold text-slate-300 mb-4 flex items-center"><i data-lucide="cpu" class="w-6 h-6 mr-2"></i> Materi Informatika: Logika Komputasi</h3>
+                    <p class="text-gray-200 mb-4">
+                        Informatika adalah bidang ilmu mengenai studi, perancangan, dan pembuatan sistem komputasi.
+                    </p>
+                    
+                    <div class="mt-6 space-y-3" id="informatika-accordion">
+                        <div class="rounded-xl bg-white/10 overflow-hidden border border-white/20">
+                            <button class="accordion-header w-full flex justify-between items-center p-4 text-left font-semibold hover:bg-white/20 transition duration-150" onclick="toggleAccordion('informatika-item-1')">
+                                <span>1. Berpikir Komputasional</span>
+                                <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-300 transform" id="informatika-icon-1"></i>
+                            </button>
+                            <div id="informatika-item-1" class="accordion-content h-0 overflow-hidden transition-all duration-300" style="height: 0;">
+                                <div class="p-4 pt-0 text-gray-200">
+                                    <p class="mb-3">Pondasi berpikir logis, dekomposisi, pengenalan pola, dan abstraksi.</p>
+                                    <!-- LINK YOUTUBE INFORMATIKA 1 (UPDATED) -->
+                                    <a href="https://youtu.be/jCb9fpPrxLc?si=M-aEX1PBm6-sw_Ly" target="_blank" class="inline-flex items-center text-sm px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition shadow-md">
+                                        <i data-lucide="youtube" class="w-4 h-4 mr-2"></i> Tonton Video
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="rounded-xl bg-white/10 overflow-hidden border border-white/20">
+                            <button class="accordion-header w-full flex justify-between items-center p-4 text-left font-semibold hover:bg-white/20 transition duration-150" onclick="toggleAccordion('informatika-item-2')">
+                                <span>2. Algoritma dan Pemrograman Dasar</span>
+                                <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-300 transform" id="informatika-icon-2"></i>
+                            </button>
+                            <div id="informatika-item-2" class="accordion-content h-0 overflow-hidden transition-all duration-300" style="height: 0;">
+                                <div class="p-4 pt-0 text-gray-200">
+                                    <p class="mb-3">Pengenalan flowchart, pseudocode, dan bahasa pemrograman dasar (misal: Python).</p>
+                                    <!-- LINK YOUTUBE INFORMATIKA 2 (UPDATED) -->
+                                    <a href="https://youtu.be/6N5IQAVndFo?si=e73k-xpdXsjRh317" target="_blank" class="inline-flex items-center text-sm px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition shadow-md">
+                                        <i data-lucide="youtube" class="w-4 h-4 mr-2"></i> Tonton Video
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    
+                    <div class="mt-8 border-t border-gray-600 pt-6">
+                        <h4 class="text-xl font-bold text-indigo-300 mb-4 flex items-center">
+                            <i data-lucide="message-square" class="w-6 h-6 mr-2"></i> Tanya dengan Tentor Informatika 💻
+                        </h4>
+                        <p class="text-sm text-gray-400 mb-4">Tanyakan tentang coding, algoritma, atau cara kerja komputer.</p>
+                        
+                        
+                        <div id="informatika-chat-interface" class="flex flex-col h-96 bg-gray-100 rounded-lg shadow-inner overflow-hidden">
+                            <div id="informatika-chat-box" class="flex-grow p-4 overflow-y-auto space-y-2">
+                                
+                                <div class="tentor-message chat-message">System ready. Apa yang ingin kamu ketahui tentang dunia digital?</div>
+                            </div>
+                            <div class="flex p-3 bg-white border-t border-gray-200">
+                                <input type="text" id="informatika-input-chat" placeholder="Ketik pertanyaan Anda di sini..." class="flex-grow px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-indigo-500 focus:border-indigo-500 text-gray-900">
+                                <button onclick="sendTentorMessage('Informatika')" class="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-r-lg hover:bg-indigo-700 transition duration-150 flex items-center">
+                                    <i data-lucide="send" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="navigate('materi')" class="mt-6 py-2 px-4 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition duration-150 flex items-center">
+                        <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i> Kembali ke Pilihan Materi
+                    </button>
+                </div>
+
+                
+                <!-- SOSIOLOGI -->
+                <div id="materi-sosiologi" class="page-content hidden bg-white/20 backdrop-blur-md p-6 rounded-xl shadow-lg border border-white/20 text-white">
+                    <h3 class="text-2xl font-bold text-rose-300 mb-4 flex items.center"><i data-lucide="users" class="w-6 h-6 mr-2"></i> Materi Sosiologi: Masyarakat dan Interaksi</h3>
+                    <p class="text-gray-200 mb-4">
+                        Sosiologi adalah studi tentang kehidupan sosial, perubahan sosial, dan penyebab serta konsekuensi dari perilaku manusia.
+                    </p>
+                    
+                    <div class="mt-6 space-y-3" id="sosiologi-accordion">
+                        <div class="rounded-xl bg-white/10 overflow-hidden border border-white/20">
+                            <button class="accordion-header w-full flex justify-between items-center p-4 text-left font-semibold hover:bg-white/20 transition duration-150" onclick="toggleAccordion('sosiologi-item-1')">
+                                <span>1. Individu, Kelompok, dan Hubungan Sosial</span>
+                                <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-300 transform" id="sosiologi-icon-1"></i>
+                            </button>
+                            <div id="sosiologi-item-1" class="accordion-content h-0 overflow-hidden transition-all duration-300" style="height: 0;">
+                                <div class="p-4 pt-0 text-gray-200">
+                                    <p class="mb-3">Mempelajari interaksi sosial, status, peran, dan pembentukan kelompok.</p>
+                                    <!-- LINK YOUTUBE SOSIOLOGI 1 (UPDATED) -->
+                                    <a href="https://youtu.be/WcQnV36NaHQ?si=C00Abcf8Tc8T67zz" target="_blank" class="inline-flex items-center text-sm px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition shadow-md">
+                                        <i data-lucide="youtube" class="w-4 h-4 mr-2"></i> Tonton Video
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="rounded-xl bg-white/10 overflow-hidden border border-white/20">
+                            <button class="accordion-header w-full flex justify-between items-center p-4 text-left font-semibold hover:bg-white/20 transition duration-150" onclick="toggleAccordion('sosiologi-item-2')">
+                                <span>2. Stratifikasi dan Ketimpangan Sosial</span>
+                                <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-300 transform" id="sosiologi-icon-2"></i>
+                            </button>
+                            <div id="sosiologi-item-2" class="accordion-content h-0 overflow-hidden transition-all duration-300" style="height: 0;">
+                                <div class="p-4 pt-0 text-gray-200">
+                                    <p class="mb-3">Analisis tentang kelas sosial, mobilitas, kemiskinan, dan diskriminasi.</p>
+                                    <!-- LINK YOUTUBE SOSIOLOGI 2 (UPDATED MULTIPLE) -->
+                                    <div class="flex flex-wrap gap-2">
+                                        <a href="https://youtu.be/-Jb6lDpuW-k?si=AkdZ7RozJyXs4hWN" target="_blank" class="inline-flex items-center text-sm px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition shadow-md">
+                                            <i data-lucide="youtube" class="w-4 h-4 mr-2"></i> Video 1
+                                        </a>
+                                        <a href="https://youtu.be/2eT_1RHG4Ww?si=UEB-M6_tlzQovpr7" target="_blank" class="inline-flex items-center text-sm px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition shadow-md">
+                                            <i data-lucide="youtube" class="w-4 h-4 mr-2"></i> Video 2
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    
+                    <div class="mt-8 border-t border-gray-600 pt-6">
+                        <h4 class="text-xl font-bold text-indigo-300 mb-4 flex items-center">
+                            <i data-lucide="message-square" class="w-6 h-6 mr-2"></i> Tanya dengan Tentor Sosiologi 👥
+                        </h4>
+                        <p class="text-sm text-gray-400 mb-4">Tanyakan tentang konflik sosial, budaya populer, atau dinamika kelompok.</p>
+                        
+                        
+                        <div id="sosiologi-chat-interface" class="flex flex-col h-96 bg-gray-100 rounded-lg shadow-inner overflow-hidden">
+                            <div id="sosiologi-chat-box" class="flex-grow p-4 overflow-y-auto space-y-2">
+                                
+                                <div class="tentor-message chat-message">Halo, mari kita diskusikan masyarakat. Apa yang membuatmu penasaran?</div>
+                            </div>
+                            <div class="flex p-3 bg-white border-t border-gray-200">
+                                <input type="text" id="sosiologi-input-chat" placeholder="Ketik pertanyaan Anda di sini..." class="flex-grow px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-indigo-500 focus:border-indigo-500 text-gray-900">
+                                <button onclick="sendTentorMessage('Sosiologi')" class="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-r-lg hover:bg-indigo-700 transition.duration-150 flex items.center">
+                                    <i data-lucide="send" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="navigate('materi')" class="mt-6 py-2 px-4 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition duration-150 flex items-center">
+                        <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i> Kembali ke Pilihan Materi
+                    </button>
+                </div>
+
+                
+                <!-- ANTROPOLOGI -->
+                <div id="materi-antropologi" class="page-content hidden bg-white/20 backdrop-blur-md p-6 rounded-xl shadow-lg border border-white/20 text-white">
+                    <h3 class="text-2xl font-bold text-amber-300 mb-4 flex items-center"><i data-lucide="landmark" class="w-6 h-6 mr-2"></i> Materi Antropologi: Keragaman Budaya</h3>
+                    <p class="text-gray-200 mb-4">
+                        Antropologi adalah studi tentang manusia, baik di masa lalu maupun sekarang, yang berfokus pada budaya dan perkembangan manusia.
+                    </p>
+                    
+                    <div class="mt-6 space-y-3" id="antropologi-accordion">
+                        <div class="rounded-xl bg-white/10 overflow-hidden border border-white/20">
+                            <button class="accordion-header w-full flex justify-between items-center p-4 text-left font-semibold hover:bg-white/20 transition duration-150" onclick="toggleAccordion('antropologi-item-1')">
+                                <span>1. Konsep Dasar Antropologi</span>
+                                <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-300 transform" id="antropologi-icon-1"></i>
+                            </button>
+                            <div id="antropologi-item-1" class="accordion-content h-0 overflow-hidden transition-all duration-300" style="height: 0;">
+                                <div class="p-4 pt-0 text-gray-200">
+                                    <p class="mb-3">Pengenalan tentang budaya, etnosentrisme, dan relativisme budaya.</p>
+                                    <!-- LINK YOUTUBE ANTROPOLOGI 1 (UPDATED) -->
+                                    <a href="https://youtu.be/bbXicJXQkQA?si=q5sVkq9HG1g3ysYT" target="_blank" class="inline-flex items-center text-sm px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition shadow-md">
+                                        <i data-lucide="youtube" class="w-4 h-4 mr-2"></i> Tonton Video
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="rounded-xl bg-white/10 overflow-hidden border border-white/20">
+                            <button class="accordion-header w-full flex justify-between items-center p-4 text-left font-semibold hover:bg-white/20 transition.duration-150" onclick="toggleAccordion('antropologi-item-2')">
+                                <span>2. Etnografi dan Penelitian Lapangan</span>
+                                <i data-lucide="chevron-down" class="w-5 h-5 transition-transform.duration-300 transform" id="antropologi-icon-2"></i>
+                            </button>
+                            <div id="antropologi-item-2" class="accordion-content h-0 overflow-hidden transition-all duration-300" style="height: 0;">
+                                <div class="p-4 pt-0 text-gray-200">
+                                    <p class="mb-3">Metode penelitian kualitatif untuk memahami budaya secara mendalam.</p>
+                                    <!-- LINK YOUTUBE ANTROPOLOGI 2 (UPDATED MULTIPLE) -->
+                                    <div class="flex flex-wrap gap-2">
+                                        <a href="https://youtu.be/mYkmHQ-k_DI?si=ouiOdYMYy76R8_qr" target="_blank" class="inline-flex items-center text-sm px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition shadow-md">
+                                            <i data-lucide="youtube" class="w-4 h-4 mr-2"></i> Video 1
+                                        </a>
+                                        <a href="https://youtu.be/poH6kxNfsfw?si=rzde7tJO1x5dEy05" target="_blank" class="inline-flex items-center text-sm px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition shadow-md">
+                                            <i data-lucide="youtube" class="w-4 h-4 mr-2"></i> Video 2
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    
+                    <div class="mt-8 border-t border-gray-600 pt-6">
+                        <h4 class="text-xl font-bold text-indigo-300 mb-4 flex items-center">
+                            <i data-lucide="message-square" class="w-6 h-6 mr-2"></i> Tanya dengan Tentor Antropologi 🏛️
+                        </h4>
+                        <p class="text-sm text-gray-400 mb-4">Tanyakan tentang ritual, tradisi, atau asal-usul manusia.</p>
+                        
+                        
+                        <div id="antropologi-chat-interface" class="flex flex-col h-96 bg-gray-100 rounded-lg shadow-inner overflow-hidden">
+                            <div id="antropologi-chat-box" class="flex-grow p-4 overflow-y-auto space-y-2">
+                                
+                                <div class="tentor-message chat-message">Salam budaya! Mari kita telusuri jejak peradaban manusia. Ada pertanyaan?</div>
+                            </div>
+                            <div class="flex p-3 bg-white border-t border-gray-200">
+                                <input type="text" id="antropologi-input-chat" placeholder="Ketik pertanyaan Anda di sini..." class="flex-grow px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-indigo-500 focus:border-indigo-500 text-gray-900">
+                                <button onclick="sendTentorMessage('Antropologi')" class="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-r-lg hover:bg-indigo-700 transition.duration-150 flex items-center">
+                                    <i data-lucide="send" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="navigate('materi')" class="mt-6 py-2 px-4 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition.duration-150 flex items.center">
+                        <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i> Kembali ke Pilihan Materi
+                    </button>
+                </div>
+
+
+                
+                <div id="tryout-start" class="page-content hidden bg.white/20 backdrop-blur-md p-6 rounded-xl shadow-lg border border-white/20 text-center text-white">
+                    <i data-lucide="zap" class="w-12 h-12 text-yellow-300 mx-auto mb-4"></i>
+                    <h3 class="text-2xl font-bold text-gray-100 mb-2">Tryout Sedang Berlangsung!</h3>
+                    <p class="text-gray-300">Di sini akan ada tampilan antarmuka soal dan waktu hitung mundur.</p>
+                    <button onclick="navigate('tryout')" class="mt-6 py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-150">
+                        Selesai / Kembali ke Menu Tryout
+                    </button>
+                </div>
+
+            </main>
+        </div>
+        
+        
+        <div id="drawer" class="fixed top-0 left-0 w-64 h-full bg-gray-900/70 backdrop-blur-md shadow-2xl p-6 flex flex-col justify-between text-white">
+            <div>
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-extrabold text-blue-300">EduExpert Menu</h3>
+                    <button id="drawer-close" class="p-1 rounded-lg text-white hover:bg-white/10 transition duration-150">
+                        <i data-lucide="x" class="w-6 h-6"></i>
+                    </button>
+                </div>
+                <nav class="space-y-2">
+                    <a href="#" id="nav-dashboard" onclick="navigate('dashboard'); return false;" class="menu-item flex items-center p-3 rounded-lg text-gray-200 hover:bg-white/10 hover:text-blue-300 transition.duration-150">
+                        <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3"></i> Dashboard
+                    </a>
+                    <a href="#" id="nav-materi" onclick="navigate('materi'); return false;" class="menu-item flex items-center p-3 rounded-lg text-gray-200 hover:bg-white/10 hover:text-blue-300 transition.duration-150">
+                        <i data-lucide="book-open" class="w-5 h-5 mr-3"></i> Materi Pembelajaran
+                    </a>
+                    <a href="#" id="nav-tryout" onclick="navigate('tryout'); return false;" class="menu-item flex items-center p-3 rounded-lg text-gray-200 hover:bg-white/10 hover:text-blue-300 transition.duration-150">
+                        <i data-lucide="award" class="w-5 h-5 mr-3"></i> Tryout &amp; Ujian
+                    </a>
+                    <a href="#" id="nav-progres" onclick="navigate('progres'); return false;" class="menu-item flex items-center p-3 rounded-lg text-gray-200 hover:bg-white/10 hover:text-blue-300 transition duration-150">
+                        <i data-lucide="bar-chart-2" class="w-5 h-5 mr-3"></i> Lihat Progres
+                    </a>
+                </nav>
+            </div>
+            
+            <button onclick="logout()" class="w-full py-2 px-4 mt-6 border border-transparent rounded-lg text-sm font-medium text-white bg-red-500 hover:bg-red-600 transition duration-150 transform hover:scale-[1.01] flex items-center justify-center">
+                <i data-lucide="log-out" class="w-4 h-4 mr-2"></i> Keluar
+            </button>
+        </div>
+
+        
+        <div id="tryout-modal" class="fixed inset-0 bg-black bg-opacity-70 hidden flex items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg p-8 transform scale-95 transition-all duration-300">
+                <div class="text-center">
+                    <i data-lucide="alert-triangle" class="w-12 h-12 text-yellow-500 mx-auto mb-4"></i>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-2" id="modal-title"></h3>
+                    <p class="text-sm font-semibold text-red-600 mb-4">"Tes kejujuranmu dan kehebatanmu di sini!"</p>
+                    
+                    <h4 class="text-lg font-semibold text-blue-700 mt-6 mb-2">Kisi-Kisi Tryout:</h4>
+                    <ul class="text-left text-gray-600 text-sm bg-gray-50 p-4 rounded-lg border border-gray-200" id="modal-kisi-kisi">
+                        
+                    </ul>
+
+                    <div class="flex justify-between items-center mt-6" id="modal-actions">
+                        <button onclick="hideTryoutModal()" class="py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition duration-150">
+                            Batal
+                        </button>
+                        <button onclick="startTryout()" class="py-2 px-6 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition duration-150">
+                            Mulai Sekarang!
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    
+    <script>
+/**
+ * Logika Aplikasi EduExpert
+ * Mengurus otentikasi (login/logout) dan navigasi antar halaman (materi/tryout/dashboard).
+ */
+
+// Kredensial baru sesuai permintaan pengguna
+// API Key untuk Gemini AI (Disediakan oleh sistem saat runtime)
+const apiKey = "AIzaSyCfNiWwmhQv0e2pM1p7b-eKpsH64xLDwvI";
+
+// --- ELEMENT SELECTIONS ---
+const pageLogin = document.getElementById('page-login');
+const pageMain = document.getElementById('page-main');
+const loginForm = document.getElementById('login-form');
+const loginMessage = document.getElementById('login-message');
+
+const drawer = document.getElementById('drawer');
+const overlay = document.getElementById('overlay');
+const drawerToggle = document.getElementById('drawer-toggle');
+const drawerClose = document.getElementById('drawer-close');
+const navbarTitle = document.getElementById('navbar-title');
+
+const contentMap = {
+    'dashboard': { id: 'content-dashboard', title: 'Dashboard' },
+    'materi': { id: 'content-materi', title: 'Materi Pembelajaran' },
+    'tryout': { id: 'content-tryout', title: 'Tryout &amp; Ujian' },
+    'tryout-selection': { id: 'content-tryout-selection', title: 'Pilih Bab Tryout' },
+    'progres': { id: 'content-progres', title: 'Progres &amp; Peringkat' }, // Updated Title
+    'materi-biologi': { id: 'materi-biologi', title: 'Biologi Detail' },
+    'materi-matematika': { id: 'materi-matematika', title: 'Matematika Detail' },
+    'materi-kimia': { id: 'materi-kimia', title: 'Kimia Detail' },
+    'materi-fisika': { id: 'materi-fisika', title: 'Fisika Detail' },
+    'materi-ekonomi': { id: 'materi-ekonomi', title: 'Ekonomi Detail' },
+    'materi-geografi': { id: 'materi-geografi', title: 'Geografi Detail' },
+    'materi-informatika': { id: 'materi-informatika', title: 'Informatika Detail' },
+    'materi-sosiologi': { id: 'materi-sosiologi', title: 'Sosiologi Detail' },
+    'materi-antropologi': { id: 'materi-antropologi', title: 'Antropologi Detail' },
+    'tryout-start': { id: 'tryout-start', title: 'Mulai Tryout' }
+};
+
+let currentView = 'dashboard';
+
+
+// --- 1. OTENTIKASI (LOGIN/LOGOUT) ---
+
+loginForm.addEventListener('submit', function(event) {
+    event.preventDefault();
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+
+    if (username === VALID_USERNAME && password === VALID_PASSWORD) {
+        // Berhasil login
+        pageLogin.classList.add('hidden');
+        pageMain.classList.remove('hidden');
+        
+        // Inisialisasi ikon Lucide untuk halaman utama
+        lucide.createIcons();
+        
+        // Langsung navigasi ke dashboard
+        navigate('dashboard'); 
+    } else {
+        // Gagal login
+        loginMessage.textContent = 'Username atau Password salah! (Coba: AKU/12345)';
+        loginMessage.classList.remove('hidden');
+    }
+});
+
+window.logout = function() {
+    pageMain.classList.add('hidden');
+    pageLogin.classList.remove('hidden');
+    document.getElementById('username').value = '';
+    document.getElementById('password').value = '';
+    loginMessage.classList.add('hidden');
+    // Pastikan drawer tertutup saat logout
+    closeDrawer(); 
+    // Reset tampilan ke login
+    navigate('dashboard');
+};
+
+
+// --- 2. NAVIGASI DAN DRAWER ---
+
+// Fungsi untuk membuka drawer
+function openDrawer() {
+    drawer.classList.add('open');
+    overlay.classList.remove('hidden');
+}
+
+// Fungsi untuk menutup drawer
+function closeDrawer() {
+    drawer.classList.remove('open');
+    overlay.classList.add('hidden');
+}
+
+// Event listeners untuk drawer
+drawerToggle.addEventListener('click', openDrawer);
+drawerClose.addEventListener('click', closeDrawer);
+overlay.addEventListener('click', closeDrawer);
+
+/**
+ * Menampilkan konten tertentu dan memperbarui navigasi.
+ * @param {string} viewKey Kunci tampilan yang akan dinavigasi (e.g., 'materi', 'tryout', 'dashboard').
+ */
+window.navigate = function(viewKey) {
+    if (!contentMap[viewKey]) {
+        console.error(`View key ${viewKey} tidak ditemukan.`);
+        showCustomModal(`Konten ${viewKey} belum tersedia!`); 
+        return;
+    }
+
+    closeDrawer(); 
+
+    // Sembunyikan semua konten
+    document.querySelectorAll('.page-content').forEach(el => el.classList.add('hidden'));
+
+    // Tampilkan konten yang diminta
+    const targetElement = document.getElementById(contentMap[viewKey].id);
+    if (targetElement) {
+        targetElement.classList.remove('hidden');
+        
+        // Jika masuk ke halaman progres, render chart, leaderboard, dan soal tryout progres
+        if (viewKey === 'progres') {
+            initCharts();
+            renderLeaderboard();
+            renderProgresQuestions(); // Pastikan soal diinject saat membuka Progres
+        }
+        if (viewKey === 'tryout-selection') {
+            renderTryoutSelection();
+        }
+    } else {
+        console.error(`Elemen dengan ID ${contentMap[viewKey].id} tidak ditemukan.`);
+        return;
+    }
+    
+    // Update judul Navbar
+    navbarTitle.textContent = contentMap[viewKey].title;
+    currentView = viewKey;
+
+    // Update status active pada menu drawer
+    document.querySelectorAll('.menu-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    // Logic to keep sidebar highlight consistent
+    let mainKey = viewKey;
+    if (viewKey.startsWith('materi-')) mainKey = 'materi';
+    if (viewKey === 'tryout-selection' || viewKey === 'tryout-start') mainKey = 'tryout';
+    if (!['dashboard', 'materi', 'tryout', 'progres'].includes(mainKey)) mainKey = 'dashboard';
+    
+    const activeNav = document.getElementById(`nav-${mainKey}`);
+    if (activeNav) {
+        activeNav.classList.add('active');
+    }
+};
+
+// Fungsi untuk dipanggil dari tombol di dalam materi detail
+window.showContent = function(id) {
+    const key = Object.keys(contentMap).find(k => contentMap[k].id === id);
+    if (key) {
+        navigate(key);
+    }
+}
+
+
+// --- 3. MODAL TRYOUT DAN MODAL KUSTOM ---
+
+const tryoutModal = document.getElementById('tryout-modal');
+const modalTitle = document.getElementById('modal-title');
+const modalKisiKisi = document.getElementById('modal-kisi-kisi');
+const modalActions = document.getElementById('modal-actions'); // New reference
+
+window.showTryoutModal = function(title, kisiKisi) {
+    modalTitle.textContent = `Konfirmasi Tryout ${title}`;
+    
+    // Format kisi-kisi menjadi list
+    const kisiHtml = kisiKisi.split(', ').map(item => `<li class="flex items-center"><i data-lucide="check-circle" class="w-4 h-4 mr-2 text-blue-500 flex-shrink-0"></i>${item}</li>`).join('');
+    modalKisiKisi.innerHTML = kisiHtml;
+    
+    // Restore original buttons (in case they were changed by showCustomModal)
+    modalActions.innerHTML = `
+        <button onclick="hideTryoutModal()" class="py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition duration-150">
+            Batal
+        </button>
+        <button onclick="startTryout()" class="py-2 px-6 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition duration-150">
+            Mulai Sekarang!
+        </button>
+    `;
+    
+    tryoutModal.classList.remove('hidden');
+    // Re-render icons inside modal
+    lucide.createIcons(); 
+};
+
+window.hideTryoutModal = function() {
+    tryoutModal.classList.add('hidden');
+};
+
+window.startTryout = function() {
+    hideTryoutModal();
+    navigate('tryout-start'); // Pindah ke halaman Tryout sedang berlangsung
+};
+
+// Fungsi placeholder untuk modal kustom
+function showCustomModal(message) {
+    // Sebagai ganti alert(), kita menggunakan modal yang sudah ada untuk pesan sederhana.
+    modalTitle.textContent = "Pesan Informasi";
+    modalKisiKisi.innerHTML = `<li class="flex items-center text-center justify-center text-lg text-gray-800"><i data-lucide="info" class="w-5 h-5 mr-2 text-indigo-500"></i>${message}</li>`;
+    tryoutModal.classList.remove('hidden');
+    
+    // Sembunyikan tombol "Mulai Sekarang" dan ganti tombol "Batal" menjadi "Tutup"
+    modalActions.innerHTML = `
+        <button onclick="hideTryoutModal()" class="py-2 px-6 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition duration-150 mx-auto">
+            Tutup
+        </button>
+    `;
+
+    lucide.createIcons();
+}
+
+
+// --- 4. ACCORDION (LACI-LACI) LOGIC ---
+/**
+ * Mengganti tinggi laci untuk membuka/menutupnya dengan transisi CSS.
+ * @param {string} contentId ID dari elemen konten (div) accordion.
+ */
+window.toggleAccordion = function(contentId) {
+    const content = document.getElementById(contentId);
+    // Asumsi ID ikon adalah contentId dengan 'item' diganti 'icon' (e.g., kimia-item-1 -> kimia-icon-1)
+    // Atau, dalam kasus Tryout Selection, ID ikon bisa berbeda
+    let iconId = contentId.replace('item', 'icon');
+    if (contentId.startsWith('tryout-subject')) {
+        iconId = contentId.replace('tryout-subject', 'tryout-icon');
+    }
+    
+    const icon = document.getElementById(iconId); 
+
+    if (!content) return;
+
+    if (content.style.height === '0px' || content.style.height === '') {
+        // Buka laci
+        content.style.height = content.scrollHeight + 'px';
+        if(icon) icon.classList.add('rotate-180');
+    } else {
+        // Tutup laci
+        content.style.height = '0px';
+        if(icon) icon.classList.remove('rotate-180');
+    }
+    
+    // Re-render icons di dalam laci
+    lucide.createIcons();
+};
+
+
+// --- 5. FITUR TANYA DENGAN TENTOR (AI INTEGRATION) ---
+
+/**
+ * Memanggil Gemini API untuk mendapatkan jawaban tentor cerdas
+ */
+async function callGeminiAPI(subject, userMessage) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+    
+    // Prompt sistem agar AI berperan sebagai guru yang ramah sesuai mapel
+    const systemPrompt = `Anda adalah seorang tentor ahli mata pelajaran ${subject} untuk siswa SMA di Indonesia bernama "Tentor ${subject}". 
+    Tugas Anda adalah menjawab pertanyaan siswa dengan ramah, jelas, akurat, dan edukatif.
+    
+    Panduan Gaya:
+    - Gunakan bahasa Indonesia yang baik namun tetap santai dan mudah dimengerti siswa SMA.
+    - Jika pertanyaan berupa soal hitungan (Matematika/Fisika/Kimia), berikan langkah-langkah pengerjaannya step-by-step agar siswa paham, jangan langsung jawaban akhir.
+    - Jika pertanyaan di luar konteks pelajaran sekolah, ingatkan siswa dengan sopan untuk kembali ke topik belajar, kecuali itu adalah sapaan umum.
+    - Gunakan emoji sesekali untuk membuat suasana belajar menyenangkan.
+    - Format jawaban bisa menggunakan **tebal** untuk penekanan istilah penting.`;
+
+    const payload = {
+        contents: [{ parts: [{ text: userMessage }] }],
+        systemInstruction: { parts: [{ text: systemPrompt }] }
+    };
+
+    // Retry logic (Exponential Backoff) jika koneksi gagal
+    const delays = [1000, 2000, 4000, 8000, 16000];
+    
+    for (let i = 0; i <= delays.length; i++) {
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+            const data = await response.json();
+            return data.candidates?.[0]?.content?.parts?.[0]?.text || "Maaf, saya sedang mengalami gangguan kognitif sementara. Coba tanya lagi ya!";
+        } catch (error) {
+            if (i === delays.length) return "Maaf, koneksi internet sepertinya bermasalah. Saya tidak bisa terhubung ke server otak saya saat ini.";
+            await new Promise(resolve => setTimeout(resolve, delays[i]));
+        }
+    }
+}
+
+/**
+ * Mengirim pesan ke Tentor (Menggunakan AI Gemini)
+ * @param {string} subject Mata pelajaran tentor
+ */
+window.sendTentorMessage = async function(subject) {
+    const inputElId = `${subject.toLowerCase()}-input-chat`;
+    const chatBoxElId = `${subject.toLowerCase()}-chat-box`;
+    const inputEl = document.getElementById(inputElId);
+    const chatBoxEl = document.getElementById(chatBoxElId);
+    
+    const userMessage = inputEl.value.trim();
+
+    if (userMessage === '') {
+        return; 
+    }
+
+    // 1. Tampilkan pesan pengguna
+    const userMsgDiv = document.createElement('div');
+    userMsgDiv.className = 'user-message chat-message';
+    userMsgDiv.textContent = userMessage;
+    chatBoxEl.appendChild(userMsgDiv);
+
+    // Bersihkan input
+    inputEl.value = '';
+
+    // 2. Tampilkan indikator loading dengan animasi
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'tentor-message chat-message text-gray-500 italic flex items-center';
+    loadingDiv.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 mr-2 animate-spin"></i> Tentor ${subject} sedang berpikir...`;
+    chatBoxEl.appendChild(loadingDiv);
+    lucide.createIcons(); // Refresh icon agar muncul
+
+    // Auto-scroll ke bawah
+    chatBoxEl.scrollTop = chatBoxEl.scrollHeight;
+
+    // 3. Panggil API Gemini
+    try {
+        const aiResponse = await callGeminiAPI(subject, userMessage);
+        
+        // Hapus loading indicator
+        loadingDiv.remove();
+
+        const tentorMsgDiv = document.createElement('div');
+        tentorMsgDiv.className = 'tentor-message chat-message';
+
+        // Format sederhana markdown ke HTML agar tampilan rapi
+        let formattedResponse = aiResponse
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold text
+            .replace(/\n/g, '<br>'); // Newlines
+
+        tentorMsgDiv.innerHTML = formattedResponse;
+        chatBoxEl.appendChild(tentorMsgDiv);
+
+    } catch (e) {
+        loadingDiv.remove();
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'tentor-message chat-message text-red-500';
+        errorDiv.textContent = "Terjadi kesalahan sistem. Silakan coba lagi.";
+        chatBoxEl.appendChild(errorDiv);
+    }
+
+    // Auto-scroll ke bawah lagi untuk melihat jawaban terbaru
+    chatBoxEl.scrollTop = chatBoxEl.scrollHeight;
+};
+
+
+// --- 6. FITUR PEMILIHAN BAB TRYOUT ---
+
+const SUBJECT_CHAPTERS = {
+    'Biologi': ['Sel', 'Genetika', 'Sistem Organ', 'Evolusi', 'Metabolisme'],
+    'Matematika': ['Trigonometri', 'Kalkulus', 'Statistika', 'Matriks', 'Peluang'],
+    'Kimia': ['Ikatan Kimia', 'Stoikiometri', 'Asam Basa', 'Elektrokimia', 'Polimer'],
+    'Fisika': ['Mekanika', 'Termodinamika', 'Gelombang', 'Listrik Magnet', 'Fisika Kuantum'],
+    'Ekonomi': ['Permintaan &amp; Penawaran', 'Kebijakan Fiskal', 'Akuntansi Dasar', 'Manajemen', 'Pasar Modal'],
+    'Geografi': ['Litosfer', 'Atmosfer', 'Hidrosfer', 'Antroposfer', 'Peta &amp; SIG'],
+    'Informatika': ['Algoritma', 'Struktur Data', 'Jaringan Komputer', 'Dampak Sosial', 'Pemrograman'],
+    'Sosiologi': ['Interaksi Sosial', 'Konflik Sosial', 'Perubahan Sosial', 'Lembaga Sosial', 'Penelitian Sosial'],
+    'Antropologi': ['Budaya', 'Etnografi', 'Religi', 'Kekerabatan', 'Bahasa &amp; Seni']
+};
+
+function renderTryoutSelection() {
+    const container = document.getElementById('tryout-selection-container');
+    if (!container) return;
+    container.innerHTML = '';
+
+    Object.keys(SUBJECT_CHAPTERS).forEach((subject, index) => {
+        const chapters = SUBJECT_CHAPTERS[subject];
+        const cardId = `tryout-subject-${index}`;
+        
+        let chaptersHtml = chapters.map(chap => `
+            <button onclick="showTryoutModal('Tryout: ${subject} - ${chap}', 'Soal 10 butir, 30 menit. Fokus materi: ${chap}.')" 
+                class="w-full text-left px-4 py-2 rounded-lg hover:bg-white/10 transition text-gray-200 text-sm flex items-center group">
+                <i data-lucide="chevron-right" class="w-4 h-4 mr-2 text-gray-400 group-hover:text-white"></i>
+                ${chap}
+            </button>
+        `).join('');
+
+        const html = `
+            <div class="rounded-xl bg-white/10 overflow-hidden border border-white/20 mb-3">
+                <button class="accordion-header w-full flex justify-between items-center p-4 text-left font-semibold hover:bg-white/20 transition duration-150" 
+                    onclick="toggleAccordion('${cardId}')">
+                    <span class="flex items-center">
+                        <i data-lucide="book" class="w-5 h-5 mr-3 text-blue-300"></i> ${subject}
+                    </span>
+                    <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-300 transform" id="${cardId.replace('tryout-subject', 'tryout-icon')}"></i>
+                </button>
+                <div id="${cardId}" class="accordion-content h-0 overflow-hidden transition-all duration-300" style="height: 0;">
+                    <div class="p-2 bg-black/20 space-y-1">
+                        ${chaptersHtml}
+                    </div>
+                </div>
+            </div>
+        `;
+        container.innerHTML += html;
+    });
+
+    lucide.createIcons();
+}
+
+// --- 7. CHART &amp; LEADERBOARD LOGIC ---
+
+let nilaiChartInstance = null;
+let statusChartInstance = null;
+
+function initCharts() {
+    // Mencegah duplikasi chart
+    if (nilaiChartInstance) return;
+
+    // 1. Grafik Batang (Nilai Rata-rata)
+    const ctxNilai = document.getElementById('chartNilai').getContext('2d');
+    nilaiChartInstance = new Chart(ctxNilai, {
+        type: 'bar',
+        data: {
+            labels: ['Matematika', 'Fisika', 'Kimia', 'Biologi', 'Informatika'],
+            datasets: [{
+                label: 'Nilai Rata-rata',
+                data: [85, 78, 88, 92, 80],
+                backgroundColor: [
+                    'rgba(239, 68, 68, 0.7)',
+                    'rgba(245, 158, 11, 0.7)',
+                    'rgba(99, 102, 241, 0.7)',
+                    'rgba(34, 197, 94, 0.7)',
+                    'rgba(100, 116, 139, 0.7)'
+                ],
+                borderColor: 'white',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.raw + '/100';
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: { color: 'white' },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                },
+                x: {
+                    ticks: { color: 'white' },
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+
+    // 2. Grafik Donat (Status Pengerjaan)
+    const ctxStatus = document.getElementById('chartStatus').getContext('2d');
+    statusChartInstance = new Chart(ctxStatus, {
+        type: 'doughnut',
+        data: {
+            labels: ['Selesai', 'Belum Selesai'],
+            datasets: [{
+                data: [12, 5], // Contoh data: 12 tryout selesai, 5 belum
+                backgroundColor: ['#3b82f6', '#94a3b8'],
+                borderColor: 'transparent',
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { color: 'white' }
+                }
+            }
+        }
+    });
+}
+
+function renderLeaderboard() {
+    const container = document.getElementById('leaderboard-container');
+    if (!container) return;
+    
+    const rankings = [
+        { rank: 1, name: "AHMAD ITSAR NAVIS ALY", score: 95 },
+        { rank: 2, name: "MUHAFFIZ FARREL DZULHILMI RAYHANO", score: 95 },
+        { rank: 3, name: "DEANDRA OZORA NONIKA BELVA", score: 93 },
+        { rank: 4, name: "WILDAN SATRIA PRAJA NUSANTAR", score: 92 },
+        { rank: 5, name: "ANDA", score: 91 },
+        { rank: 6, name: "TALITA FAUSTINA NABILLAH", score: 91 },
+        { rank: 7, name: "BILQIS JEHAN RAMADHANI", score: 91 },
+        { rank: 8, name: "DANA EKA RARA NARISWARI", score: 90 },
+        { rank: 9, name: "NAURA SILMI ALFITRI", score: 89 },
+        { rank: 10, name: "AZRA IDHAVI", score: 89 }
+    ];
+
+    let html = '';
+    
+    rankings.forEach(student => {
+        // Styling khusus berdasarkan peringkat
+        let badge = `<span class="text-gray-400 w-6 text-center font-mono">#${student.rank}</span>`;
+        let bgClass = "leaderboard-item";
+        let nameColor = "text-white";
+        
+        if (student.rank === 1) {
+            badge = `<i data-lucide="crown" class="w-6 h-6 text-yellow-400 fill-yellow-400"></i>`;
+            bgClass += " leaderboard-top-1";
+            nameColor = "text-yellow-200";
+        } else if (student.rank === 2) {
+            badge = `<i data-lucide="medal" class="w-6 h-6 text-gray-300 fill-gray-400"></i>`;
+            bgClass += " leaderboard-top-2";
+        } else if (student.rank === 3) {
+            badge = `<i data-lucide="medal" class="w-6 h-6 text-orange-400 fill-orange-600"></i>`;
+            bgClass += " leaderboard-top-3";
+        }
+
+        // Highlight khusus untuk "ANDA"
+        if (student.name === "ANDA") {
+            bgClass += " leaderboard-me";
+            nameColor = "text-blue-200";
+        }
+
+        html += `
+            <div class="flex justify-between items-center p-3 rounded-lg ${bgClass}">
+                <div class="flex items-center space-x-3 overflow-hidden">
+                    <div class="flex-shrink-0">${badge}</div>
+                    <div class="flex flex-col">
+                        <span class="${nameColor} font-medium truncate text-sm sm:text-base">${student.name}</span>
+                        <span class="text-xs text-gray-400">SMA N 2 LAMONGAN</span>
+                    </div>
+                </div>
+                <div class="flex-shrink-0 bg-white/20 px-3 py-1 rounded-md font-bold text.white">
+                    ${student.score}
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+    
+    // Re-render icons setelah HTML diinject
+    setTimeout(() => lucide.createIcons(), 50);
+}
+
+/* ---------- 8. INJEKSI SOAL TRYOUT PADA BAGIAN PROGRES ---------- */
+
+// Data soal per Mapel dan Sub-bab (A–E) — 10 soal per Sub-bab
+const TRYOUT_QUESTIONS = [
+  {
+    subject: 'Biologi',
+    subbabs: [
+      {
+        title: 'Sel',
+        questions: [
+          { q: 'Organel sel yang berfungsi sebagai tempat respirasi seluler untuk menghasilkan energi (ATP) adalah...', options: ['Ribosom','Lisosom','Mitokondria','Retikulum Endoplasma','Badan Golgi'], answer: 'C' },
+          { q: 'Perbedaan mendasar antara sel prokariotik dan sel eukariotik terletak pada...', options: ['Ada tidaknya dinding sel','Ada tidaknya membran inti','Ada tidaknya ribosom','Ukuran sel','Kemampuan bergerak'], answer: 'B' },
+          { q: 'Fungsi utama dari Lisosom dalam sel hewan adalah...', options: ['Sintesis protein','Respirasi sel','Pencernaan intraseluler','Transportasi zat','Pembelahan sel'], answer: 'C' },
+          { q: 'Peristiwa perpindahan pelarut dari larutan hipotonis ke hipertonis melalui membran semipermeabel disebut...', options: ['Difusi','Osmosis','Transpor aktif','Endositosis','Eksositosis'], answer: 'B' },
+          { q: 'Berikut ini yang bukan merupakan perbedaan antara sel tumbuhan dan sel hewan adalah...', options: ['Ada tidaknya dinding sel','Ada tidaknya plastida','Ada tidaknya sentriol','Ada tidaknya membran sel','Ukuran vakuola'], answer: 'D' },
+          { q: 'Fungsi Ribosom yang tersebar di sitoplasma maupun yang menempel pada Retikulum Endoplasma adalah...', options: ['Sintesis lemak','Sintesis protein','Modifikasi protein','Detoksifikasi racun','Menghasilkan energi'], answer: 'B' },
+          { q: 'Organel yang berperan dalam proses sekresi sel dan pembentukan lisosom adalah...', options: ['Retikulum Endoplasma','Badan Golgi','Mitokondria','Nukleus','Kloroplas'], answer: 'B' },
+          { q: 'Fungsi utama dinding sel pada tumbuhan adalah...', options: ['Mengatur lalu lintas zat','Tempat fotosintesis','Memberi bentuk dan melindungi sel','Menyimpan cadangan makanan','Tempat sintesis protein'], answer: 'C' },
+          { q: 'Plasmolisis pada sel tumbuhan terjadi jika sel berada dalam larutan yang bersifat...', options: ['Hipotonis','Isotonis','Hipertonis','Netral','Jenuh'], answer: 'C' },
+          { q: 'Struktur sel yang mengatur lalu lintas zat keluar masuk sel adalah...', options: ['Dinding sel','Sitoplasma','Membran sel','Nukleus','Vakuola'], answer: 'C' },
+        ]
+      },
+      {
+        title: 'Genetika',
+        questions: [
+          { q: 'Perbedaan antara DNA dan RNA dari segi gula pentosa penyusunnya adalah...', options: ['DNA: Ribosa, RNA: Deoksiribosa','DNA: Deoksiribosa, RNA: Ribosa','DNA: Glukosa, RNA: Fruktosa','DNA: Ribosa, RNA: Ribulosa','DNA: Heksosa, RNA: Pentosa'], answer: 'B' },
+          { q: 'Hukum Mendel I dikenal juga dengan istilah hukum...', options: ['Asortasi','Segregasi','Dominansi','Intermediet','Pautan'], answer: 'B' },
+          { q: 'Jika genotipe Aa disilangkan dengan Aa, rasio fenotipe yang dihasilkan jika dominansi penuh adalah...', options: ['1 : 2 : 1','3 : 1','1 : 1','9 : 3 : 3 : 1','100% dominan'], answer: 'B' },
+          { q: 'Basa nitrogen golongan purin yang menyusun DNA adalah...', options: ['Adenin dan Guanin','Sitosin dan Timin','Adenin dan Timin','Guanin dan Sitosin','Urasil dan Adenin'], answer: 'A' },
+          { q: 'Pasangan gen yang terletak pada lokus yang bersesuaian pada kromosom homolog disebut...', options: ['Genom','Alel','DNA','Kromatin','Nukleotida'], answer: 'B' },
+          { q: 'Wanita karier buta warna (X^cb X) menikah dengan pria normal (XY). Kemungkinan anak laki-laki mereka buta warna adalah...', options: ['0%','25%','50%','75%','100%'], answer: 'C' },
+          { q: 'Mutasi yang terjadi karena perubahan satu atau beberapa basa nitrogen dalam gen disebut...', options: ['Mutasi kromosom','Mutasi titik (Point mutation)','Aneuploidi','Poliploidi','Translokasi'], answer: 'B' },
+          { q: 'Peran mRNA (messenger RNA) dalam sintesis protein adalah...', options: ['Membawa asam amino ke ribosom','Membawa kode genetik (kodon) dari DNA ke ribosom','Menerjemahkan kode genetik','Membentuk struktur ribosom','Mengikat asam amino'], answer: 'B' },
+          { q: 'Jumlah kromosom pada sel somatik (tubuh) manusia normal adalah...', options: ['22 pasang','23 buah','46 pasang','46 buah','48 buah'], answer: 'D' },
+          { q: 'Sifat menurun yang tidak tampak dari luar disebut...', options: ['Fenotipe','Genotipe','Dominan','Resesif','Intermediet'], answer: 'B' },
+        ]
+      }
+    ]
+  },
+  {
+    subject: 'Matematika',
+    subbabs: [
+      {
+        title: 'Statistika',
+        questions: [
+          { q: 'Diketahui data: 5, 8, 9, 12, 6. Rata-rata (Mean) dari data tersebut adalah...', options: ['6','7','8','9','10'], answer: 'C' },
+          { q: 'Nilai yang paling sering muncul dalam sekumpulan data disebut...', options: ['Mean','Median','Modus','Kuartil','Desil'], answer: 'C' },
+          { q: 'Jika jumlah data (n) genap, maka median adalah...', options: ['Data ke-(n/2)','Data ke-(n+1)/2','Rata-rata dari dua data yang berada di tengah','Data yang paling sering muncul','Selisih data terbesar dan terkecil'], answer: 'C' },
+          { q: 'Simpangan Baku (Standard Deviation) digunakan untuk mengukur...', options: ['Nilai tengah data','Sebaran data terhadap rata-rata','Nilai yang paling sering muncul','Selisih nilai maksimum dan minimum','Jumlah seluruh data'], answer: 'B' },
+          { q: 'Himpunan bagian dari populasi yang diambil untuk diteliti disebut...', options: ['Objek','Data','Sampel','Statistik','Parameter'], answer: 'C' },
+          { q: 'Diketahui data terurut: 4, 6, 6, 7, 9. Nilai Kuartil Bawah (Q1) adalah...', options: ['4','5','6','6,5','7'], answer: 'B' },
+          { q: 'Selisih antara nilai terbesar dan nilai terkecil dalam data disebut...', options: ['Simpangan rata-rata','Ragam','Jangkauan (Range)','Kuartil','Median'], answer: 'C' },
+          { q: 'Rata-rata nilai 10 siswa adalah 75. Jika satu siswa baru masuk, rata-rata menjadi 76. Nilai siswa baru tersebut adalah...', options: ['80','85','86','90','95'], answer: 'C' },
+          { q: 'Diagram yang paling cocok untuk melihat tren kenaikan atau penurunan data dalam kurun waktu tertentu adalah...', options: ['Diagram Lingkaran','Diagram Batang','Diagram Garis','Histogram','Poligon'], answer: 'C' },
+          { q: 'Rumus untuk mencari varians (ragam) pada data tunggal populasi adalah...', options: ['(1/n) Σ (xi - x̄)','(1/n) Σ |xi - x̄|','(1/n) Σ (xi - x̄)^2','√((1/n) Σ (xi - x̄)^2)','Σ xi / n'], answer: 'C' },
+        ]
+      },
+      {
+        title: 'Peluang',
+        questions: [
+          { q: 'Sebuah dadu dilempar satu kali. Peluang munculnya mata dadu bilangan prima adalah...', options: ['1/6','1/3','1/2','2/3','5/6'], answer: 'C' },
+          { q: 'Dua buah koin dilempar bersamaan. Peluang muncul keduanya angka adalah...', options: ['1/4','1/3','1/2','3/4','1'], answer: 'A' },
+          { q: 'Dalam kotak terdapat 5 bola merah dan 3 bola biru. Peluang terambil 1 bola biru adalah...', options: ['3/5','5/8','3/8','1/3','1/8'], answer: 'C' },
+          { q: 'Banyaknya anggota ruang sampel jika 3 koin dilempar sekaligus adalah...', options: ['3','6','8','9','12'], answer: 'C' },
+          { q: 'Dari angka 1, 2, 3, 4, 5 akan disusun bilangan 3 angka berbeda. Banyak bilangan yang terbentuk adalah...', options: ['10','20','60','120','125'], answer: 'C' },
+          { q: 'Dua kejadian dikatakan saling lepas jika...', options: ['P(A ∩ B) ≠ 0','P(A ∩ B) = 0','P(A ∪ B) = 1','Kejadian A mempengaruhi B','Kejadian A sama dengan B'], answer: 'B' },
+          { q: 'Jika peluang hari ini hujan adalah 0,6, maka peluang hari ini tidak hujan adalah...', options: ['0,3','0,4','0,5','0,6','1,0'], answer: 'B' },
+          { q: 'Dari seperangkat kartu bridge (52 kartu), peluang terambilnya kartu As adalah...', options: ['1/52','4/52','13/52','26/52','1/2'], answer: 'B' },
+          { q: 'Dua dadu dilempar bersama. Peluang muncul jumlah mata dadu 9 adalah...', options: ['2/36','3/36','4/36','5/36','6/36'], answer: 'C' },
+          { q: 'Rumus frekuensi harapan suatu kejadian A dari n kali percobaan adalah...', options: ['P(A) + n','P(A) / n','P(A) × n','n / P(A)','P(A)^n'], answer: 'C' },
+        ]
+      }
+    ]
+  },
+  {
+    subject: 'Ekonomi',
+    subbabs: [
+      {
+        title: 'Permintaan & Penawaran',
+        questions: [
+          { q: 'Hukum Permintaan menyatakan bahwa...', options: ['Jika harga naik, permintaan naik','Jika harga turun, permintaan turun','Jika harga naik, permintaan turun','Harga tidak mempengaruhi permintaan','Permintaan selalu berbanding lurus dengan penawaran'], answer: 'C' },
+          { q: 'Faktor yang dapat menggeser kurva penawaran ke kanan (bertambah) adalah...', options: ['Kenaikan biaya produksi','Kemajuan teknologi','Penurunan jumlah produsen','Kenaikan harga barang itu sendiri','Kenaikan pajak'], answer: 'B' },
+          { q: 'Jika permintaan meningkat sementara penawaran tetap, maka harga keseimbangan akan...', options: ['Turun','Tetap','Naik','Berubah tidak menentu','Menjadi nol'], answer: 'C' },
+          { q: 'Istilah Ceteris Paribus dalam hukum ekonomi berarti...', options: ['Faktor lain berubah-ubah','Faktor lain dianggap tetap','Harga adalah penentu utama','Tidak ada faktor lain','Semua faktor berpengaruh'], answer: 'B' },
+          { q: 'Barang yang penggunaannya saling melengkapi disebut barang...', options: ['Substitusi','Komplementer','Ekonomi','Bebas','Inferior'], answer: 'B' },
+          { q: 'Ukuran kepekaan jumlah permintaan terhadap perubahan harga disebut...', options: ['Elastisitas Penawaran','Elastisitas Pendapatan','Elastisitas Harga Permintaan','Elastisitas Silang','Koefisien Gini'], answer: 'C' },
+          { q: 'Jika koefisien elastisitas E > 1, maka permintaannya bersifat...', options: ['Inelastis','Elastis','Unitary elastis','Inelastis sempurna','Elastis sempurna'], answer: 'B' },
+          { q: 'Dampak penetapan harga dasar (Floor Price) yang berada di atas harga pasar adalah...', options: ['Kelebihan permintaan (Shortage)','Kelebihan penawaran (Surplus)','Harga pasar naik','Keseimbangan pasar tercapai','Jumlah barang berkurang drastis'], answer: 'B' },
+          { q: 'Kurva penawaran umumnya bergerak (slope) dari...', options: ['Kiri atas ke kanan bawah','Kiri bawah ke kanan atas','Tegak lurus vertikal','Mendatar horizontal','Tidak beraturan'], answer: 'B' },
+          { q: 'Harga Ekuilibrium terjadi ketika...', options: ['Permintaan > Penawaran','Penawaran > Permintaan','Jumlah permintaan = Jumlah penawaran','Harga ditentukan pemerintah','Tidak ada transaksi'], answer: 'C' },
+        ]
+      },
+      {
+        title: 'Akuntansi Dasar',
+        questions: [
+          { q: 'Persamaan Dasar Akuntansi yang benar adalah...', options: ['Harta = Utang - Modal','Harta = Utang + Modal','Utang = Harta + Modal','Modal = Harta + Utang','Harta = Modal - Utang'], answer: 'B' },
+          { q: 'Jika perusahaan membeli perlengkapan secara kredit, maka pencatatannya adalah...', options: ['Perlengkapan (+) Debit, Kas (-) Kredit','Perlengkapan (+) Debit, Utang (+) Kredit','Perlengkapan (+) Debit, Modal (+) Kredit','Utang (+) Debit, Perlengkapan (-) Kredit','Kas (-) Debit, Perlengkapan (+) Kredit'], answer: 'B' },
+          { q: 'Berikut ini yang termasuk Aset Lancar (Current Assets) adalah...', options: ['Gedung dan Tanah','Kendaraan dan Mesin','Kas dan Piutang Usaha','Hak Paten dan Goodwill','Modal Saham'], answer: 'C' },
+          { q: 'Akun yang saldonya akan dilaporkan dalam Neraca disebut akun...', options: ['Nominal','Riil','Sementara','Laba Rugi','Campuran'], answer: 'B' },
+          { q: 'Apabila Harta bertambah, maka akan dicatat di posisi...', options: ['Kredit','Debit','Saldo','Kanan','Pasiva'], answer: 'B' },
+          { q: 'Fungsi dari Neraca Saldo (Trial Balance) adalah...', options: ['Menghitung laba rugi','Mengetahui posisi modal akhir','Menguji keseimbangan Debit dan Kredit','Menutup akun nominal','Mencatat transaksi harian'], answer: 'C' },
+          { q: 'Pengambilan aset perusahaan untuk keperluan pribadi pemilik disebut...', options: ['Investasi','Dividen','Prive','Beban','Piutang'], answer: 'C' },
+          { q: 'Komponen utama dalam Laporan Laba Rugi adalah...', options: ['Harta dan Utang','Utang dan Modal','Pendapatan dan Beban','Modal dan Prive','Kas dan Ekuitas'], answer: 'C' },
+          { q: 'Penyusutan (depresiasi) biasanya berlaku untuk aset...', options: ['Lancar','Tetap (kecuali tanah)','Tidak berwujud','Investasi','Kas'], answer: 'B' },
+          { q: 'Utang gaji termasuk dalam kategori...', options: ['Harta Lancar','Kewajiban Jangka Pendek','Kewajiban Jangka Panjang','Modal','Pendapatan'], answer: 'B' },
+        ]
+      }
+    ]
+  },
+  {
+    subject: 'Geografi',
+    subbabs: [
+      {
+        title: 'Litosfer',
+        questions: [
+          { q: 'Tiga jenis batuan utama penyusun litosfer adalah...', options: ['Beku, Sedimen, Metamorf','Pasir, Tanah, Kerikil','Granit, Marmer, Kapur','Vulkanik, Tektonik, Seismik','Lempung, Humus, Gambut'], answer: 'A' },
+          { q: 'Tenaga pembentuk muka bumi yang berasal dari dalam bumi disebut tenaga...', options: ['Eksogen','Endogen','Tektonik','Vulkanik','Seismik'], answer: 'B' },
+          { q: 'Pusat gempa yang berada di dalam bumi disebut...', options: ['Episentrum','Hiposentrum','Seismograf','Isoseista','Makroseisma'], answer: 'B' },
+          { q: 'Gunung api yang berbentuk landai seperti perisai (contoh: Mauna Loa) terbentuk karena...', options: ['Lava kental dan tekanan gas tinggi','Lava cair dan tekanan gas rendah','Tumpukan material padat (eflata)','Letusan eksplosif dahsyat','Pergeseran lempeng'], answer: 'B' },
+          { q: 'Proses pelapukan batuan yang disertai perubahan susunan kimiawi disebut pelapukan...', options: ['Mekanik','Fisik','Kimiawi','Biologis','Organik'], answer: 'C' },
+          { q: 'Dampak positif vulkanisme bagi pertanian adalah...', options: ['Munculnya mata air panas','Adanya bahan galian tambang','Tanah menjadi subur karena abu vulkanik','Terbentuknya kawah wisata','Keluarnya gas alam'], answer: 'C' },
+          { q: 'Lapisan bumi paling luar tempat makhluk hidup tinggal adalah...', options: ['Astenosfer','Mantel','Inti Luar','Kerak Bumi (Crust)','Inti Dalam'], answer: 'D' },
+          { q: 'Pengikisan tanah oleh air yang mengalir disebut...', options: ['Abrasi','Ablasi (Erosi air)','Deflasi','Eksarasi','Korosi'], answer: 'B' },
+          { q: 'Salah satu contoh batuan metamorf adalah...', options: ['Granit','Batu apung','Marmer','Batu kapur','Pasir'], answer: 'C' },
+          { q: 'Gerak turunnya daratan sehingga permukaan air laut seolah-olah naik disebut...', options: ['Orogenesa','Epirogenesa Positif','Epirogenesa Negatif','Vulkanisme','Seisme'], answer: 'B' },
+        ]
+      },
+      {
+        title: 'Atmosfer',
+        questions: [
+          { q: 'Lapisan atmosfer tempat terjadinya gejala cuaca (hujan, awan, badai) adalah...', options: ['Troposfer','Stratosfer','Mesosfer','Termosfer','Eksosfer'], answer: 'A' },
+          { q: 'Fungsi utama lapisan Ozon di Stratosfer adalah...', options: ['Memantulkan gelombang radio','Melindungi bumi dari meteor','Menyerap radiasi sinar ultraviolet (UV)','Menghasilkan oksigen','Menurunkan suhu bumi'], answer: 'C' },
+          { q: 'Perbedaan utama antara iklim dan cuaca terletak pada...', options: ['Unsur pembentuknya','Waktu dan luas wilayahnya','Alat ukurnya','Penyebab terjadinya','Ketinggian tempatnya'], answer: 'B' },
+          { q: 'Setiap kenaikan ketinggian 100 meter, suhu udara rata-rata turun 0,6°C. Fenomena ini disebut...', options: ['Angin Muson','Gradien Geometris','Gradien Termis','Efek Rumah Kaca','Inversi Suhu'], answer: 'C' },
+          { q: 'Hujan yang terjadi karena angin yang membawa uap air naik ke pegunungan disebut hujan...', options: ['Zenital','Frontal','Orografis','Siklonal','Buatan'], answer: 'C' },
+          { q: 'Gas yang paling dominan menyebabkan efek rumah kaca dan pemanasan global adalah...', options: ['Oksigen (O2)','Nitrogen (N2)','Karbon Dioksida (CO2)','Argon','Hidrogen'], answer: 'C' },
+          { q: 'Klasifikasi iklim menurut Junghuhn didasarkan pada...', options: ['Curah hujan dan suhu','Ketinggian tempat dan vegetasi','Letak lintang','Bulan basah dan bulan kering','Arah angin'], answer: 'B' },
+          { q: 'Angin yang berganti arah setiap 6 bulan sekali dan memengaruhi musim di Indonesia adalah...', options: ['Angin Pasat','Angin Muson','Angin Fohn','Angin Siklon','Angin Lembah'], answer: 'B' },
+          { q: 'Alat yang digunakan untuk mengukur kelembapan udara adalah...', options: ['Barometer','Termometer','Higrometer','Anemometer','Ombrometer'], answer: 'C' },
+          { q: 'El Nino adalah fenomena penyimpangan iklim yang menyebabkan...', options: ['Musim hujan berkepanjangan di Indonesia','Kemarau panjang dan kekeringan di Indonesia','Suhu udara menjadi sangat dingin','Angin kencang dan badai','Naiknya permukaan air laut drastis'], answer: 'B' },
+        ]
+      }
+    ]
+  },
+  {
+    subject: 'Sosiologi',
+    subbabs: [
+      {
+        title: 'Interaksi Sosial',
+        questions: [
+          { q: 'Dua syarat utama terjadinya interaksi sosial adalah...', options: ['Status dan Peran','Kontak Sosial dan Komunikasi','Simpati dan Empati','Individu dan Kelompok','Nilai dan Norma'], answer: 'B' },
+          { q: 'Kontak sosial yang terjadi melalui perantara (misalnya telepon) disebut kontak...', options: ['Primer','Sekunder','Langsung','Negatif','Positif'], answer: 'B' },
+          { q: 'Tindakan meniru gaya hidup atau penampilan orang lain secara berlebihan disebut...', options: ['Sugesti','Imitasi','Identifikasi','Simpati','Motivasi'], answer: 'B' },
+          { q: 'Bentuk proses sosial asosiatif yang ditandai dengan usaha bersama untuk mencapai tujuan adalah...', options: ['Kompetisi','Kontravensi','Konflik','Kerjasama','Pertentangan'], answer: 'D' },
+          { q: 'Kemampuan untuk merasakan apa yang dirasakan orang lain dan diikuti tindakan nyata disebut...', options: ['Simpati','Empati','Sugesti','Imitasi','Identifikasi'], answer: 'B' },
+          { q: 'Peleburan dua kebudayaan yang menghasilkan kebudayaan baru dan menghilangkan ciri asli disebut...', options: ['Akulturasi','Asimilasi','Difusi','Akomodasi','Inovasi'], answer: 'B' },
+          { q: 'Proses sosial yang berada di antara persaingan dan pertentangan (seperti hasutan atau fitnah) disebut...', options: ['Konflik','Kompetisi','Kontravensi','Koersi','Konsiliasi'], answer: 'C' },
+          { q: 'Perbedaan utama antara persaingan dan konflik adalah...', options: ['Persaingan menggunakan kekerasan, konflik tidak','Persaingan beraturan dan tanpa kekerasan fisik, konflik menyerang lawan','Persaingan adalah proses disosiatif, konflik asosiatif','Persaingan melibatkan kelompok, konflik individu','Tidak ada perbedaan'], answer: 'B' },
+          { q: 'Pemberian pengaruh pandangan dari satu pihak ke pihak lain yang diterima tanpa kritik disebut...', options: ['Motivasi','Sugesti','Imitasi','Empati','Simpati'], answer: 'B' },
+          { q: 'Salah satu bentuk akomodasi dimana kedua belah pihak saling mengurangi tuntutan agar tercapai kesepakatan disebut...', options: ['Koersi','Kompromi','Arbitrase','Ajudikasi','Stalemate'], answer: 'B' },
+        ]
+      },
+      {
+        title: 'Konflik Sosial',
+        questions: [
+          { q: 'Akar penyebab utama konflik sosial menurut Soerjono Soekanto adalah perbedaan...', options: ['Fisik, Ras, Etnis, Agama','Individu, Kebudayaan, Kepentingan, Perubahan Sosial','Kekayaan, Jabatan, Pendidikan, Keturunan','Wilayah, Bahasa, Adat, Makanan','Ideologi, Politik, Ekonomi, Sosial'], answer: 'B' },
+          { q: 'Konflik yang terjadi antara buruh dan pemilik perusahaan termasuk jenis konflik...', options: ['Horizontal','Vertikal (Antar kelas)','Pribadi','Rasial','Politik'], answer: 'B' },
+          { q: 'Salah satu dampak positif dari konflik sosial bagi pihak internal (in-group) adalah...', options: ['Terjadinya dominasi','Retaknya hubungan','Meningkatnya solidaritas sesama anggota kelompok','Hancurnya harta benda','Munculnya kepribadian yang agresif'], answer: 'C' },
+          { q: 'Penyelesaian konflik dengan bantuan pihak ketiga yang netral (hanya sebagai penasihat) disebut...', options: ['Arbitrase','Mediasi','Ajudikasi','Koersi','Konsiliasi'], answer: 'B' },
+          { q: 'Jika pihak ketiga dalam penyelesaian konflik memiliki wewenang untuk mengambil keputusan yang mengikat, maka disebut...', options: ['Mediasi','Arbitrase','Negosiasi','Toleransi','Kompromi'], answer: 'B' },
+          { q: 'Konflik yang bernuansa SARA (Suku, Agama, Ras, Antargolongan) seringkali terjadi karena adanya...', options: ['Primordialisme dan Etnosentrisme yang kuat','Toleransi yang tinggi','Asimilasi budaya','Kerjasama antar kelompok','Kesetaraan sosial'], answer: 'A' },
+          { q: 'Kekerasan yang tidak terlihat langsung tetapi ada dalam sistem (seperti kemiskinan akibat kebijakan) disebut kekerasan...', options: ['Fisik','Verbal','Struktural','Psikologis','Kultural'], answer: 'C' },
+          { q: 'Penyelesaian konflik melalui jalur pengadilan disebut...', options: ['Mediasi','Arbitrase','Ajudikasi','Stalemate','Segregasi'], answer: 'C' },
+          { q: 'Suatu keadaan dimana konflik berhenti karena kedua belah pihak memiliki kekuatan yang seimbang disebut...', options: ['Gencatan Senjata (Stalemate)','Eliminasi','Dominasi','Integrasi','Asimilasi'], answer: 'A' },
+          { q: 'Konflik horizontal biasanya terjadi antar...', options: ['Pemerintah dan rakyat','Atasan dan bawahan','Kelompok yang sederajat/setara','Orang tua dan anak','Guru dan murid'], answer: 'C' },
+        ]
+      }
+    ]
+  },
+  {
+    subject: 'Fisika',
+    subbabs: [
+      {
+        title: 'Mekanika',
+        questions: [
+          { q: 'Pernyataan yang sesuai dengan bunyi Hukum I Newton adalah...', options: ['Gaya (F) berbanding lurus dengan massa (m) dan percepatan (a).','Setiap aksi selalu ada reaksi yang sama besar dan berlawanan arah.','Benda akan cenderung mempertahankan keadaan gerak atau diamnya.','Energi kinetik sama dengan energi potensial.','Usaha yang dilakukan sama dengan perubahan energi kinetik.'], answer: 'C' },
+          { q: 'Sebuah mobil bergerak dengan kecepatan awal 10 m/s dan percepatan 2 m/s^2 selama 5 detik. Kecepatan akhirnya adalah...', options: ['15 m/s','20 m/s','25 m/s','30 m/s','35 m/s'], answer: 'B' },
+          { q: 'Berikut ini adalah pasangan besaran Vektor dan Skalar yang benar:', options: ['Vektor: Usaha, Skalar: Gaya','Vektor: Massa, Skalar: Kecepatan','Vektor: Kecepatan, Skalar: Jarak','Vektor: Energi, Skalar: Perpindahan','Vektor: Kelajuan, Skalar: Percepatan'], answer: 'C' },
+          { q: 'Pada gerak jatuh bebas, energi potensial benda akan diubah menjadi...', options: ['Energi kimia','Energi listrik','Energi mekanik','Energi kinetik','Energi kalor'], answer: 'D' },
+          { q: 'Hukum II Newton secara matematis dirumuskan sebagai...', options: ['F = W','F = m · a','F = -F_aksi','v = v0 + a · t','Ep + Ek = konstan'], answer: 'B' },
+          { q: 'Komponen gaya pada sumbu X dari gaya 50 N yang membentuk sudut 60° terhadap horizontal adalah...', options: ['25 N','25√3 N','50 N','50√3 N','0 N'], answer: 'A' },
+          { q: 'Tumbukan yang tidak mengalami kehilangan energi kinetik disebut tumbukan...', options: ['Lenting sebagian','Tak lenting sama sekali','Lenting sempurna','Plastis','Elastis sebagian'], answer: 'C' },
+          { q: 'Apa yang dimaksud dengan Usaha dalam fisika?', options: ['Jumlah energi potensial dan kinetik','Perubahan momentum','Gaya yang berbanding lurus dengan massa','Hasil kali antara gaya dan perpindahan searah gaya','Kecepatan akhir benda'], answer: 'D' },
+          { q: 'Pada sistem katrol majemuk, keuntungan mekanis yang didapat adalah...', options: ['Selalu kurang dari 1','Sama dengan jumlah tali yang menahan beban','Sama dengan gaya beban','Berbanding terbalik dengan gaya kuasa','Selalu sama dengan 1'], answer: 'B' },
+          { q: 'Besaran yang mengukur kecenderungan suatu benda untuk berotasi pada porosnya adalah...', options: ['Momen gaya','Momen inersia','Momentum sudut','Percepatan sudut','Kecepatan sudut'], answer: 'B' },
+        ]
+      },
+      {
+        title: 'Termodinamika',
+        questions: [
+          { q: 'Hukum I Termodinamika (Kekekalan Energi) menyatakan hubungan antara...', options: ['Entropi dan suhu','Kalor, usaha, dan energi dalam','Tekanan, volume, dan suhu','Efisiensi dan suhu','Perubahan wujud zat'], answer: 'B' },
+          { q: 'Proses termodinamika di mana suhu gas dijaga tetap konstan (T = konstan) disebut...', options: ['Isobarik','Isokhorik','Adiabatik','Isotermal','Isentropik'], answer: 'D' },
+          { q: 'Pada proses Adiabatik, besaran yang nilainya nol (tetap) adalah...', options: ['Suhu (T)','Volume (V)','Tekanan (P)','Kalor (Q)','Usaha (W)'], answer: 'D' },
+          { q: 'Mesin yang bekerja secara reversibel dan memiliki efisiensi maksimum di antara semua mesin kalor yang beroperasi antara dua suhu yang sama disebut...', options: ['Mesin Stirling','Mesin Diesel','Mesin Bensin','Mesin Carnot','Mesin Otto'], answer: 'D' },
+          { q: 'Hukum II Termodinamika terkait arah aliran kalor menyatakan...', options: ['Kalor mengalir dari benda bersuhu rendah ke tinggi','Kalor dapat mengalir spontan dari suhu rendah ke suhu tinggi','Kalor mengalir spontan dari benda bersuhu tinggi ke suhu rendah','Energi total sistem dan lingkungan adalah konstan','Entropi sistem selalu berkurang'], answer: 'C' },
+          { q: 'Suhu suatu benda adalah 27°C. Berapakah suhunya dalam Kelvin?', options: ['27 K','100 K','273 K','300 K','327 K'], answer: 'D' },
+          { q: 'Entropi adalah ukuran yang menggambarkan...', options: ['Keteraturan sistem','Kecepatan reaksi','Tingkat ketidakteraturan atau keacakan sistem','Total energi sistem','Jumlah usaha yang dilakukan'], answer: 'C' },
+          { q: 'Pada proses Isokhorik, usaha (W) yang dilakukan gas ideal bernilai nol karena...', options: ['Suhu tidak berubah','Tekanan tidak berubah','Tidak ada perubahan volume','Tidak ada kalor yang masuk/keluar','Energi dalam tetap'], answer: 'C' },
+          { q: 'Berikut ini adalah cara-cara perpindahan kalor, kecuali...', options: ['Konduksi','Konveksi','Radiasi','Induksi','Aliran'], answer: 'D' },
+          { q: 'Sebuah gas ideal dipanaskan pada tekanan tetap (Isobarik). Apa yang terjadi pada volume gas?', options: ['Volume tetap','Volume berkurang','Volume bertambah','Volume menjadi nol','Volume tidak bergantung pada suhu'], answer: 'C' },
+        ]
+      }
+    ]
+  },
+  {
+    subject: 'Kimia',
+    subbabs: [
+      {
+        title: 'Ikatan Kimia',
+        questions: [
+          { q: 'Ikatan yang terbentuk akibat adanya serah terima elektron antara unsur logam dan non-logam disebut ikatan...', options: ['Kovalen tunggal','Kovalen rangkap','Logam','Ion','Kovalen koordinasi'], answer: 'D' },
+          { q: 'Ikatan Kovalen Koordinasi terjadi ketika...', options: ['Kedua atom saling menggunakan elektron secara setara','Hanya satu atom yang menyumbangkan pasangan elektron untuk digunakan bersama','Terjadi serah terima elektron sempurna','Elektron valensi membentuk lautan elektron','Terjadi gaya tarik-menarik elektrostatik'], answer: 'B' },
+          { q: 'Ciri khas senyawa yang memiliki ikatan ion adalah...', options: ['Titik didih rendah dan tidak larut dalam air','Titik leleh dan titik didih tinggi','Tidak menghantarkan listrik dalam fase cair maupun padat','Berupa gas pada suhu ruang','Larut dalam pelarut non-polar'], answer: 'B' },
+          { q: 'Dalam molekul H2O, ikatan yang terbentuk antara atom H dan O adalah ikatan...', options: ['Ion','Kovalen non-polar','Kovalen polar','Logam','Kovalen koordinasi'], answer: 'C' },
+          { q: 'Perbedaan mendasar antara ikatan kovalen polar dan non-polar adalah...', options: ['Jumlah pasangan elektron yang digunakan','Jenis atom (logam vs non-logam)','Adanya perbedaan keelektronegatifan','Kerapatan elektron merata','Bentuk molekul yang simetris'], answer: 'C' },
+          { q: 'Unsur X (Nomor Atom 11) berikatan dengan Unsur Y (Nomor Atom 17). Rumus kimia dan jenis ikatan yang terbentuk adalah...', options: ['XY, Ikatan Kovalen','X2Y, Ikatan Ion','XY2, Ikatan Kovalen','XY, Ikatan Ion','X2Y, Ikatan Kovalen Polar'], answer: 'D' },
+          { q: 'Sistem ikatan pada logam yang menjelaskan kemampuan menghantarkan listrik disebut...', options: ['Ikatan ionik','Ikatan kovalen','Gaya dipol terinduksi','Teori Lautan Elektron','Gaya London'], answer: 'D' },
+          { q: 'Gaya antarmolekul yang terbentuk antara atom H yang terikat pada atom yang sangat elektronegatif (N, O, atau F) dengan atom elektronegatif lain disebut...', options: ['Gaya Van der Waals','Gaya London','Ikatan Hidrogen','Gaya Dipol-Dipol','Gaya Ion-Dipol'], answer: 'C' },
+          { q: 'Mengapa bentuk molekul CH4 adalah tetrahedron?', options: ['Molekulnya polar dan memiliki pasangan elektron bebas.','Memiliki empat domain elektron ikatan yang saling menolak sejauh mungkin.','Memiliki ikatan rangkap dua.','Atom pusat tidak memiliki pasangan elektron ikatan.','Gaya dipolnya sangat besar.'], answer: 'B' },
+          { q: 'Gaya antarmolekul yang paling lemah adalah...', options: ['Ikatan Hidrogen','Gaya Dipol-Dipol','Gaya Dispersi (Gaya London)','Ikatan Kovalen','Ikatan Ion'], answer: 'C' },
+        ]
+      },
+      {
+        title: 'Stoikiometri',
+        questions: [
+          { q: 'Satu mol zat didefinisikan sebagai jumlah zat yang mengandung partikel sebanyak...', options: ['6,02 × 10^23 partikel','1,00 gram','22,4 liter','Massa atom relatif','Massa molekul relatif'], answer: 'A' },
+          { q: 'Massa Molekul Relatif (Mr) dari H2SO4 (Ar H=1, S=32, O=16) adalah...', options: ['64','80','98','102','112'], answer: 'C' },
+          { q: 'Volume dari 1 mol gas ideal pada keadaan STP (0°C, 1 atm) adalah...', options: ['2,24 liter','22,4 liter','24,4 liter','1 liter','6,02 × 10^23 liter'], answer: 'B' },
+          { q: 'Koefisien reaksi pada persamaan yang setara: C3H8 + O2 → CO2 + H2O adalah...', options: ['1, 3, 3, 4','1, 5, 3, 4','1, 3, 5, 4','1, 4, 3, 5','1, 5, 4, 3'], answer: 'B' },
+          { q: 'Jumlah mol yang terdapat dalam 4 gram gas Hidrogen (H2, Ar H=1) adalah...', options: ['1 mol','2 mol','3 mol','4 mol','5 mol'], answer: 'B' },
+          { q: 'Zat yang habis bereaksi dan membatasi jumlah produk yang dihasilkan dalam suatu reaksi kimia disebut...', options: ['Hasil reaksi','Pereaksi berlebih','Pereaksi Pembatas','Katalis','Inhibitor'], answer: 'C' },
+          { q: 'Hukum yang menyatakan "Massa zat sebelum dan sesudah reaksi dalam sistem tertutup adalah sama" adalah...', options: ['Hukum Proust','Hukum Lavoisier (Kekekalan Massa)','Hukum Dalton','Hukum Avogadro','Hukum Boyle'], answer: 'B' },
+          { q: 'Persentase massa Karbon (C) dalam senyawa CO2 (Ar C=12, O=16) adalah...', options: ['27,3%','32,4%','50,0%','66,7%','72,7%'], answer: 'A' },
+          { q: 'Hukum yang menyatakan "Perbandingan massa unsur-unsur penyusun suatu senyawa selalu tetap" adalah...', options: ['Hukum Perbandingan Volume','Hukum Perbandingan Berganda','Hukum Perbandingan Tetap (Hukum Proust)','Hukum Kekekalan Massa','Hukum Gas Ideal'], answer: 'C' },
+          { q: 'Jika suatu reaksi dilakukan dalam wadah terbuka dan massa setelah reaksi berkurang, maka zat yang berkurang kemungkinan adalah...', options: ['Padatan','Larutan','Gas yang lepas ke udara','Cairan','Logam'], answer: 'C' },
+        ]
+      }
+    ]
+  },
+  {
+    subject: 'Informatika',
+    subbabs: [
+      {
+        title: 'Algoritma',
+        questions: [
+          { q: 'Urutan langkah-langkah logis yang digunakan untuk memecahkan masalah secara sistematis disebut...', options: ['Pseudocode','Flowchart','Algoritma','Program','Struktur Data'], answer: 'C' },
+          { q: 'Dalam Flowchart, simbol yang digunakan untuk menunjukkan proses keputusan atau pemilihan adalah...', options: ['Persegi panjang','Oval','Jajaran genjang','Belah ketupat (Diamond)','Panah'], answer: 'D' },
+          { q: 'Perbedaan mendasar antara Pseudocode dan Flowchart adalah...', options: ['Pseudocode menggunakan gambar, Flowchart menggunakan bahasa tiruan.','Pseudocode lebih mudah dipahami oleh komputer, Flowchart lebih mudah dipahami manusia.','Pseudocode menggunakan notasi bahasa manusia, Flowchart menggunakan simbol grafis.','Flowchart dapat dieksekusi, Pseudocode tidak.','Keduanya sama-sama tidak terstruktur.'], answer: 'C' },
+          { q: 'Struktur perulangan yang akan memeriksa kondisi terlebih dahulu sebelum menjalankan blok kode adalah...', options: ['For-Loop','Repeat-Until','While-Do','Do-While','Go To'], answer: 'C' },
+          { q: 'Algoritma yang mengambil pilihan terbaik (optimal lokal) pada setiap tahapan dengan harapan menemukan solusi global terbaik disebut...', options: ['Brute Force','Divide and Conquer','Dynamic Programming','Greedy','Backtracking'], answer: 'D' },
+          { q: 'Dalam pemrograman, variabel berfungsi sebagai...', options: ['Tempat menyimpan instruksi program','Tempat sementara untuk menyimpan nilai data','Notasi untuk menguji kondisi','Simbol untuk perulangan','Alat untuk visualisasi data'], answer: 'B' },
+          { q: 'Berikut ini yang bukan termasuk struktur dasar algoritma adalah...', options: ['Runtunan (Sequence)','Pemilihan (Selection)','Pengulangan (Iteration)','Rekursi','Percabangan'], answer: 'D' },
+          { q: 'Konsep Divide and Conquer dalam algoritma mengacu pada strategi...', options: ['Memecah masalah besar menjadi sub-masalah yang lebih kecil','Mencoba semua kemungkinan solusi','Menggunakan solusi sub-masalah sebelumnya','Mengambil keputusan yang terbaik saat ini','Mencari solusi secara acak'], answer: 'A' },
+          { q: 'Jika sebuah algoritma menghitung jumlah bilangan dari 1 hingga N (misalnya N=5), maka outputnya adalah...', options: ['5','10','15','20','25'], answer: 'C' },
+          { q: 'Mengapa efisiensi algoritma (kompleksitas waktu) penting dalam Informatika?', options: ['Agar program terlihat lebih elegan.','Untuk memastikan program selalu berjalan pada semua kondisi.','Untuk meminimalkan penggunaan sumber daya (waktu dan memori).','Agar mudah diubah oleh programmer lain.','Karena itu adalah syarat mutlak semua program.'], answer: 'C' },
+        ]
+      },
+      {
+        title: 'Struktur Data',
+        questions: [
+          { q: 'Perbedaan utama antara Array dan Linked List terletak pada...', options: ['Kemampuan menyimpan data','Penggunaan memori yang berdekatan/tidak berdekatan','Kecepatan pencarian','Jenis data yang disimpan','Bahasa pemrograman yang digunakan'], answer: 'B' },
+          { q: 'Prinsip utama dari struktur data Stack (Tumpukan) adalah...', options: ['FIFO (First-In, First-Out)','LILO (Last-In, Last-Out)','LIFO (Last-In, First-Out)','FOFI (First-Out, First-In)','Random Access'], answer: 'C' },
+          { q: 'Contoh penerapan struktur data Queue (Antrean) adalah...', options: ['Tumpukan piring','Urutan panggilan layanan customer service','Daftar kontak','Pohon keluarga','Susunan buku di rak'], answer: 'B' },
+          { q: 'Dalam struktur data Tree, simpul paling atas yang tidak memiliki parent disebut...', options: ['Leaf','Branch','Root','Node','Edge'], answer: 'C' },
+          { q: 'Struktur data yang terdiri dari simpul (vertex) dan sisi (edge) yang menghubungkannya disebut...', options: ['Array','Stack','Queue','Linked List','Graph'], answer: 'E' },
+          { q: 'Kelemahan utama dari penggunaan Array statis adalah...', options: ['Akses elemen sangat lambat','Harus menentukan ukuran maksimal sejak awal','Tidak dapat menyimpan data numerik','Hanya bisa digunakan di bahasa pemrograman tertentu','Elemennya tidak berurutan'], answer: 'B' },
+          { q: 'Operasi yang digunakan untuk menambah elemen ke dalam Stack disebut...', options: ['Pop','Enqueue','Push','Dequeue','Peek'], answer: 'C' },
+          { q: 'Teknik yang digunakan untuk memetakan data dengan kunci (key) tertentu ke lokasi indeks dalam sebuah tabel disebut...', options: ['Sorting','Searching','Hashing','Recursion','Traversing'], answer: 'C' },
+          { q: 'Struktur data yang paling tepat untuk merepresentasikan hubungan pertemanan di media sosial adalah...', options: ['Array','Queue','Graph','Stack','Linked List'], answer: 'C' },
+          { q: 'Dalam Binary Search Tree (BST), syarat yang harus dipenuhi adalah...', options: ['Semua simpul memiliki tepat dua anak.','Nilai simpul kiri harus lebih besar dari root.','Nilai simpul kanan harus lebih kecil dari root.','Nilai simpul kiri harus lebih kecil, dan nilai simpul kanan harus lebih besar dari root.','Simpul dapat diakses secara acak.'], answer: 'D' },
+        ]
+      }
+    ]
+  },
+  {
+    subject: 'Antropologi',
+    subbabs: [
+      {
+        title: 'Budaya',
+        questions: [
+          { q: 'Menurut Koentjaraningrat, wujud kebudayaan yang paling abstrak terletak pada...', options: ['Sistem Sosial','Fisik/Artefak','Sistem Ide (Gagasan)','Bahasa dan Kesenian','Sistem Teknologi'], answer: 'C' },
+          { q: 'Berikut ini yang bukan termasuk 7 unsur kebudayaan universal adalah...', options: ['Sistem Religi','Sistem Kekerabatan','Sistem Organisasi Sosial','Sistem Komunikasi (Bahasa)','Sistem Politik Kepartaian'], answer: 'E' },
+          { q: 'Wujud kebudayaan sebagai Artefak adalah wujud budaya yang bersifat...', options: ['Abstrak, hanya ada dalam pikiran','Berupa tingkah laku atau aktivitas','Paling konkret, berupa benda fisik','Berupa nilai dan norma','Berupa mitos dan legenda'], answer: 'C' },
+          { q: 'Konsep bahwa bahasa sangat memengaruhi cara berpikir dan persepsi penuturnya disebut...', options: ['Difusi','Relativitas Budaya (Hipotesis Sapir-Whorf)','Enkulturasi','Asimilasi','Akulturasi'], answer: 'B' },
+          { q: 'Cultural Lag (Kesenjangan Budaya) terjadi ketika...', options: ['Budaya material berkembang lebih lambat dari budaya non-material.','Budaya non-material berkembang lebih lambat dari budaya material.','Seluruh aspek budaya berkembang dengan kecepatan yang sama.','Suatu budaya menolak inovasi baru.','Terjadi kontak antar dua budaya yang berbeda.'], answer: 'B' },
+          { q: 'Salah satu contoh dari unsur Sistem Teknologi dalam kebudayaan adalah...', options: ['Upacara adat','Senjata tradisional','Aturan perkawinan','Kepercayaan terhadap dewa','Struktur klan'], answer: 'B' },
+          { q: 'Proses belajar budaya dari generasi ke generasi sejak dini (misalnya belajar menyapa orang tua) disebut...', options: ['Sosialisasi','Enkulturasi (Pewarisan budaya)','Akulturasi','Asimilasi','Difusi'], answer: 'B' },
+          { q: 'Fungsi utama kebudayaan bagi masyarakat adalah...', options: ['Sebagai alat untuk mendominasi budaya lain','Sebagai pedoman dan acuan dalam bersikap','Sebagai pemicu konflik antar kelompok','Untuk memisahkan diri dari kelompok lain','Untuk menciptakan keterasingan'], answer: 'B' },
+          { q: 'Perbedaan antara adat istiadat dan kebiasaan (folkways) adalah...', options: ['Adat memiliki sanksi yang lebih kuat','Kebiasaan lebih bersifat formal','Adat hanya ada di masyarakat tradisional','Kebiasaan bersifat turun-temurun','Tidak ada sanksi pada adat istiadat'], answer: 'A' },
+          { q: 'Nilai budaya yang mengikat dan diyakini kebenarannya oleh masyarakat disebut...', options: ['Norma','Ide','Mores','Folkways','Nilai Dasar'], answer: 'E' },
+        ]
+      },
+      {
+        title: 'Etnografi',
+        questions: [
+          { q: 'Etnografi adalah cabang ilmu Antropologi yang fokus pada...', options: ['Perbandingan antar budaya','Evolusi fisik manusia','Penulisan dan deskripsi mendalam mengenai suatu kebudayaan','Penelitian fosil manusia purba','Penyelesaian masalah antar suku'], answer: 'C' },
+          { q: 'Langkah awal yang esensial dalam melakukan penelitian etnografi adalah...', options: ['Membuat kuesioner masif','Observasi partisipan','Analisis data kuantitatif','Studi pustaka','Wawancara terstruktur'], answer: 'B' },
+          { q: 'Teknik pengumpulan data di mana peneliti hidup dan terlibat aktif dalam kegiatan masyarakat yang diteliti disebut...', options: ['Wawancara Mendalam','Survei','Observasi Partisipan','Studi Kasus','Studi Literatur'], answer: 'C' },
+          { q: 'Seorang etnografer perlu membuat catatan lapangan (field notes) karena...', options: ['Untuk membuktikan dirinya sudah berada di lapangan','Sebagai sumber data utama yang merekam detail observasi dan wawancara','Untuk menghitung jumlah populasi','Agar mudah diakses oleh pemerintah','Sebagai bahan untuk membuat laporan keuangan'], answer: 'B' },
+          { q: 'Pendekatan yang mencoba melihat dan memahami budaya dari sudut pandang orang luar (ilmuwan) disebut pendekatan...', options: ['Emik','Etik','Sinkronik','Diakronik','Subjektif'], answer: 'B' },
+          { q: 'Peran utama Informan Kunci (Key Informant) dalam penelitian etnografi adalah...', options: ['Menyediakan seluruh dana penelitian','Sebagai sumber data utama yang paling mengerti dan dipercaya dalam budaya tersebut','Sebagai pihak yang menentang peneliti','Hanya sebagai penerjemah','Mengurus akomodasi peneliti'], answer: 'B' },
+          { q: 'Tantangan utama yang sering dihadapi peneliti saat melakukan observasi partisipan adalah...', options: ['Kurangnya dana','Sulitnya mencari alat tulis','Mengatasi kejutan budaya (Culture Shock) dan menjaga netralitas','Masalah transportasi','Terlalu banyak data yang didapatkan'], answer: 'C' },
+          { q: 'Metode pengumpulan data yang memungkinkan peneliti menggali informasi secara rinci dan mendalam dari satu individu adalah...', options: ['Survei','Wawancara Mendalam (In-depth Interview)','Kuesioner Tertutup','Statistik','Eksperimen'], answer: 'B' },
+          { q: 'Penulis karya etnografi klasik Argonauts of the Western Pacific yang dikenal sebagai bapak etnografi modern adalah...', options: ['Clifford Geertz','Emile Durkheim','Bronislaw Malinowski','Max Weber','Karl Marx'], answer: 'C' },
+          { q: 'Dalam etnografi, Emik adalah sudut pandang yang fokus pada...', options: ['Perbandingan budaya','Penjelasan berdasarkan konsep dan kategori masyarakat setempat','Analisis statistik','Penggunaan teori Antropologi yang baku','Hubungan antar kelompok'], answer: 'B' },
+        ]
+      }
+    ]
+  }
+];
+
+let progresQuestionsRendered = false;
+
+/**
+ * Render kumpulan soal tryout pada bagian "Lihat Progres" secara dinamis.
+ * Menggunakan accordion bertingkat: Mapel -> Sub-bab -> Soal.
+ */
+function renderProgresQuestions() {
+  if (progresQuestionsRendered) {
+    return;
+  }
+  const container = document.getElementById('progres-tryout-container');
+  if (!container) return;
+
+  let html = '';
+  TRYOUT_QUESTIONS.forEach((mapel, si) => {
+    const subjectItemId = `progres-item-subject-${si}`;
+    const subjectIconId = `progres-icon-subject-${si}`;
+    let subHtml = '';
+
+    mapel.subbabs.forEach((sub, bi) => {
+      const subItemId = `progres-item-subject-${si}-subbab-${bi}`;
+      const subIconId = `progres-icon-subject-${si}-subbab-${bi}`;
+
+      // Bangun daftar soal (10 soal per Sub-bab)
+      let qHtml = '';
+      sub.questions.forEach((qq, qi) => {
+        const groupName = `q-subject-${si}-subbab-${bi}-q-${qi}`;
+        qHtml += `
+          <div class="bg-white/5 p-4 rounded-lg mb-3 border border-white/10">
+            <div class="text-sm font-semibold mb-2">${qi + 1}. ${escapeHtml(qq.q)}</div>
+            <div class="space-y-2">
+              ${['A','B','C','D','E'].map(letter => `
+                <label class="flex items-center gap-2 text-gray-200">
+                  <input type="radio" name="${groupName}" value="${letter}" class="accent-blue-500" />
+                  <span><span class="font-bold">${letter}.</span> ${escapeHtml(qq.options[letter.charCodeAt(0) - 65])}</span>
+                </label>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      });
+
+      subHtml += `
+        <div class="rounded-xl bg-white/10 overflow-hidden border border-white/20 mb-3">
+          <button class="accordion-header w-full flex justify-between items-center p-4 text-left font-semibold hover:bg-white/20 transition duration-150"
+                  onclick="toggleAccordion('${subItemId}')">
+            <span class="flex items-center"><i data-lucide="book-open" class="w-5 h-5 mr-2 text-purple-300"></i> ${sub.title}</span>
+            <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-300 transform" id="${subIconId}"></i>
+          </button>
+          <div id="${subItemId}" class="accordion-content h-0 overflow-hidden transition-all duration-300" style="height: 0;">
+            <div class="p-4 bg-black/20">
+              ${qHtml}
+              <div class="flex items-center justify-between mt-4">
+                <button class="py-2 px-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition duration-150"
+                        onclick="gradeSubbab(${si}, ${bi})">
+                  Nilai Sub-bab
+                </button>
+                <div id="result-subject-${si}-subbab-${bi}" class="text-sm text-yellow-300"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+
+    html += `
+      <div class="rounded-xl bg-white/10 overflow-hidden border border-white/20">
+        <button class="accordion-header w-full flex justify-between items-center p-4 text-left font-semibold hover:bg-white/20 transition duration-150"
+                onclick="toggleAccordion('${subjectItemId}')">
+          <span class="flex items-center">
+            <i data-lucide="layers" class="w-5 h-5 mr-3 text-blue-300"></i> ${mapel.subject}
+          </span>
+          <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-300 transform" id="${subjectIconId}"></i>
+        </button>
+        <div id="${subjectItemId}" class="accordion-content h-0 overflow-hidden transition-all.duration-300" style="height: 0;">
+          <div class="p-2 bg-black/20">
+            ${subHtml}
+          </div>
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+  progresQuestionsRendered = true;
+  lucide.createIcons();
+}
+
+/**
+ * Grading per Sub-bab: hitung jumlah benar, salah, dan yang belum dijawab.
+ */
+window.gradeSubbab = function(si, bi) {
+  const sub = TRYOUT_QUESTIONS[si]?.subbabs[bi];
+  if (!sub) return;
+  let correct = 0;
+  let answered = 0;
+
+  sub.questions.forEach((qq, qi) => {
+    const groupName = `q-subject-${si}-subbab-${bi}-q-${qi}`;
+    const checked = document.querySelector(`input[name="${groupName}"]:checked`);
+    if (checked) {
+      answered++;
+      if (checked.value === qq.answer) correct++;
+    }
+  });
+
+  const total = sub.questions.length;
+  const notAnswered = total - answered;
+  const score = Math.round((correct / total) * 100);
+  const resultEl = document.getElementById(`result-subject-${si}-subbab-${bi}`);
+  if (resultEl) {
+    resultEl.innerHTML = `
+      <div class="flex items-center gap-2">
+        <i data-lucide="check-circle-2" class="w-4 h-4 text-green-400"></i>
+        <span>Benar: <span class="font-bold text-green-300">${correct}</span>/<span class="font-bold">${total}</span></span>
+        <span class="ml-3">Belum dijawab: <span class="font-bold text-amber-300">${notAnswered}</span></span>
+        <span class="ml-3">Skor: <span class="font-bold text-blue-300">${score}</span></span>
+      </div>
+    `;
+    lucide.createIcons();
+  }
+};
+
+/**
+ * Escape sederhana untuk konten teks agar aman ditampilkan di HTML.
+ */
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+
+// Inisialisasi: Pastikan semua konten tersembunyi kecuali login
+document.addEventListener('DOMContentLoaded', () => {
+    // Sembunyikan semua konten saat inisialisasi, hanya login yang tampil
+    document.querySelectorAll('.page-content').forEach(el => el.classList.add('hidden'));
+
+    // Pre-render soal tryout agar bisa langsung diakses saat membuka "Lihat Progres"
+    renderProgresQuestions();
+
+    // PENTING: Inisialisasi ikon Lucide di luar halaman utama
+    lucide.createIcons();
+});
+    </script>
+
+<!-- FIX TRYOUT SCRIPT START -->
+<script>
+// ----------------------
+// Minimal fix: tryout pilihan bab -> render soal di tryout-start
+// ----------------------
+
+window.selectedTryout = null; // simpan pilihan user
+
+function renderTryoutSelection() {
+  const container = document.getElementById('tryout-selection-container');
+  if (!container) return;
+  container.innerHTML = '';
+
+  Object.keys(SUBJECT_CHAPTERS).forEach((subject, index) => {
+    const chapters = SUBJECT_CHAPTERS[subject];
+    const cardId = `tryout-subject-${index}`;
+
+    let chaptersHtml = chapters.map((chap, ci) => `
+      <button onclick="showTryoutModal('${subject}', ${ci}, 'Tryout: ${subject} - ${chap}', 'Soal 10 butir, 30 menit. Fokus materi: ${chap}.')"
+        class="w-full text-left px-4 py-2 rounded-lg hover:bg-white/10 transition text-gray-200 text-sm flex items-center group">
+        <i data-lucide="chevron-right" class="w-4 h-4 mr-2 text-gray-400 group-hover:text-white"></i>
+        ${chap}
+      </button>
+    `).join('');
+
+    const html = `
+      <div class="rounded-xl bg-white/10 overflow-hidden border border-white/20 mb-3">
+        <button class="accordion-header w-full flex justify-between items-center p-4 text-left font-semibold hover:bg-white/20 transition duration-150"
+          onclick="toggleAccordion('${cardId}')">
+          <span class="flex items-center">
+            <i data-lucide="book" class="w-5 h-5 mr-3 text-blue-300"></i> ${subject}
+          </span>
+          <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-300 transform" id="${cardId.replace('tryout-subject', 'tryout-icon')}"></i>
+        </button>
+        <div id="${cardId}" class="accordion-content h-0 overflow-hidden transition-all duration-300" style="height: 0;">
+          <div class="p-2 bg-black/20 space-y-1">
+            ${chaptersHtml}
+          </div>
+        </div>
+      </div>
+    `;
+    container.innerHTML += html;
+  });
+
+  lucide.createIcons();
+}
+
+window.showTryoutModal = function(subject, subIndex, title, kisiKisi) {
+  window.selectedTryout = { subject, subIndex };
+
+  modalTitle.textContent = `Konfirmasi Tryout ${title}`;
+
+  const kisiHtml = kisiKisi.split(', ').map(item => `<li class="flex items-center"><i data-lucide="check-circle" class="w-4 h-4 mr-2 text-blue-500 flex-shrink-0"></i>${item}</li>`).join('');
+  modalKisiKisi.innerHTML = kisiHtml;
+
+  modalActions.innerHTML = `
+    <button onclick="hideTryoutModal()" class="py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition duration-150">
+      Batal
+    </button>
+    <button onclick="startTryout()" class="py-2 px-6 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition duration-150">
+      Mulai Sekarang!
+    </button>
+  `;
+  tryoutModal.classList.remove('hidden');
+  lucide.createIcons();
+};
+
+window.startTryout = function() {
+  hideTryoutModal();
+
+  if (!window.selectedTryout) {
+    showCustomModal('Pilih sub-bab terlebih dahulu.');
+    return;
+  }
+  navigate('tryout-start');
+  renderTryoutForSelected();
+};
+
+function renderTryoutForSelected() {
+  const tryoutContainer = document.getElementById('tryout-start');
+  if (!tryoutContainer) return;
+
+  const { subject, subIndex } = window.selectedTryout || {};
+  const subjectData = TRYOUT_QUESTIONS.find(s => s.subject === subject);
+  const sub = subjectData?.subbabs?.[subIndex];
+
+  if (!sub) {
+    tryoutContainer.innerHTML = '<p class="text-red-300">Soal tidak ditemukan untuk pilihan ini.</p>';
+    return;
+  }
+
+  let html = `
+    <div class="text-left">
+      <h3 class="text-2xl font-bold mb-2">Tryout: ${subject} — ${sub.title}</h3>
+      <p class="text-sm text-gray-300 mb-4">Jumlah soal: ${sub.questions.length}. Jawaban pilihan ganda A–E.</p>
+      <div id="tryout-questions" class="space-y-4">
+  `;
+
+  sub.questions.forEach((qq, qi) => {
+    const name = `tryout-q-${qi}`;
+    html += `
+      <div class="p-4 bg-black/20 rounded-lg">
+        <div class="font-semibold mb-2">${qi+1}. ${escapeHtml(qq.q)}</div>
+        <div class="grid grid-cols-1 gap-2">
+          ${qq.options.map((opt, oi) => {
+            const optLetter = String.fromCharCode(65 + oi);
+            return `
+              <label class="inline-flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="${name}" value="${optLetter}">
+                <span>${optLetter}. ${escapeHtml(opt)}</span>
+              </label>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  });
+
+  html += `
+      </div>
+      <div class="mt-4 flex items-center gap-3">
+        <button onclick="gradeCurrentTryout()" class="py-2 px-4 bg-green-600 text-white rounded-lg">Nilai Sekarang</button>
+        <button onclick="navigate('tryout-selection')" class="py-2 px-4 border rounded-lg text-gray-200">Kembali</button>
+        <div id="tryout-result" class="ml-4 text-sm"></div>
+      </div>
+    </div>
+  `;
+
+  tryoutContainer.innerHTML = html;
+  lucide.createIcons();
+}
+
+window.gradeCurrentTryout = function() {
+  const { subject, subIndex } = window.selectedTryout || {};
+  const subjectData = TRYOUT_QUESTIONS.find(s => s.subject === subject);
+  const sub = subjectData?.subbabs?.[subIndex];
+  if (!sub) return showCustomModal('Tidak ada soal untuk dinilai.');
+
+  let correct = 0;
+  sub.questions.forEach((qq, qi) => {
+    const checked = document.querySelector(`input[name="tryout-q-${qi}"]:checked`);
+    if (checked && checked.value === qq.answer) correct++;
+  });
+
+  const total = sub.questions.length;
+  const scorePercent = Math.round((correct / total) * 100);
+  const resultEl = document.getElementById('tryout-result');
+  if (resultEl) {
+    resultEl.innerHTML = `<span class="font-semibold text-green-300">Benar: ${correct}/${total} — Skor: ${scorePercent}%</span>`;
+  }
+};
+</script>
+<!-- FIX TRYOUT SCRIPT END -->
+
+
+<!-- ENHANCED TRYOUT: One-question-per-page, 30-minute timer, navigation, auto-submit -->
+<script>
+(function(){
+  // override existing functions by re-defining them
+  const TOTAL_SECONDS_DEFAULT = 30 * 60; // 30 minutes
+
+  // Render tryout for selected with 1 soal per page
+  window.renderTryoutForSelected = function() {
+    const tryoutContainer = document.getElementById('tryout-start');
+    if (!tryoutContainer) return;
+    const sel = window.selectedTryout || {};
+    const subject = sel.subject;
+    const subIndex = sel.subIndex;
+    const subjectData = TRYOUT_QUESTIONS.find(s => s.subject === subject);
+    const sub = subjectData?.subbabs?.[subIndex];
+    if (!sub) {
+      tryoutContainer.innerHTML = '<p class="text-red-300">Soal tidak ditemukan untuk pilihan ini.</p>';
+      return;
+    }
+
+    // Build UI
+    let html = `
+      <div class="bg-white/5 p-6 rounded-xl text-white">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-2xl font-bold">Tryout: ${subject} — ${sub.title}</h3>
+            <p class="text-sm text-gray-300">Jumlah soal: ${sub.questions.length} — Waktu: 30 menit</p>
+          </div>
+          <div class="text-right">
+            <div id="tryout-timer" class="text-lg font-mono font-semibold text-amber-300">30:00</div>
+            <div class="text-xs text-gray-300">Sisa Waktu</div>
+          </div>
+        </div>
+
+        <div id="tryout-q-wrapper" class="space-y-4"></div>
+
+        <div class="mt-6 flex items-center justify-between">
+          <div>
+            <button id="tryout-prev" class="py-2 px-4 bg-gray-600 text-white rounded-lg hover:bg-gray-500">Sebelumnya</button>
+            <button id="tryout-next" class="py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 ml-2">Selanjutnya</button>
+          </div>
+          <div class="flex items-center gap-3">
+            <div id="tryout-progress" class="text-sm text-gray-200"></div>
+            <button id="tryout-submit" class="py-2 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700">Kirim & Nilai</button>
+          </div>
+        </div>
+
+        <div id="tryout-result" class="mt-4 text-sm"></div>
+      </div>
+    `;
+    tryoutContainer.innerHTML = html;
+
+    const qWrapper = document.getElementById('tryout-q-wrapper');
+    const total = sub.questions.length;
+
+    // render all questions hidden; each question gets a container with data-index
+    sub.questions.forEach((qq, i) => {
+      const qHtml = document.createElement('div');
+      qHtml.className = 'tryout-question';
+      qHtml.dataset.index = i;
+      qHtml.style.display = 'none';
+      qHtml.innerHTML = `
+        <div class="bg-white/5 p-4 rounded-lg mb-3 border border-white/10 text-gray-200">
+          <div class="text-base font-semibold mb-2"><span class="font-bold">${i+1}.</span> ${escapeHtml(qq.q)}</div>
+          <div class="space-y-2">
+            ${['A','B','C','D','E'].map(letter => `
+              <label class="flex items-center gap-2 text-gray-200">
+                <input type="radio" name="tryout-q-${i}" value="${letter}" class="accent-blue-500" />
+                <span><span class="font-bold">${letter}.</span> ${escapeHtml(qq.options[letter.charCodeAt(0)-65])}</span>
+              </label>
+            `).join('')}
+          </div>
+        </div>
+      `;
+      qWrapper.appendChild(qHtml);
+    });
+
+    // control state
+    let current = 0;
+    const questionsEls = Array.from(qWrapper.querySelectorAll('.tryout-question'));
+    function showIndex(idx) {
+      if (idx < 0) idx = 0;
+      if (idx >= questionsEls.length) idx = questionsEls.length - 1;
+      questionsEls.forEach((el, j) => el.style.display = (j === idx ? 'block' : 'none'));
+      current = idx;
+      document.getElementById('tryout-progress').textContent = `Soal ${current+1} / ${total}`;
+      // update prev/next disabled state
+      document.getElementById('tryout-prev').disabled = current === 0;
+      document.getElementById('tryout-next').disabled = current === total - 1;
+      // focus first radio
+      const firstRadio = questionsEls[current].querySelector('input[type="radio"]');
+      if (firstRadio) firstRadio.focus();
+    }
+
+    document.getElementById('tryout-prev').addEventListener('click', () => showIndex(current - 1));
+    document.getElementById('tryout-next').addEventListener('click', () => showIndex(current + 1));
+    document.getElementById('tryout-submit').addEventListener('click', gradeTryoutAndShow);
+
+    // Keyboard support: left/right arrows, number keys to jump
+    document.addEventListener('keydown', function onKey(e) {
+      if (document.getElementById('tryout-start').contains(qWrapper)) {
+        if (e.key === 'ArrowLeft') showIndex(current - 1);
+        if (e.key === 'ArrowRight') showIndex(current + 1);
+        if (/^[1-9]$/.test(e.key)) {
+          const num = parseInt(e.key,10);
+          if (num >=1 && num <= total) showIndex(num-1);
+        }
+      }
+    });
+
+    showIndex(0);
+
+    // Timer logic
+    let remaining = TOTAL_SECONDS_DEFAULT;
+    const timerEl = document.getElementById('tryout-timer');
+    let timerInterval = null;
+
+    function formatTime(sec) {
+      const m = Math.floor(sec/60).toString().padStart(2,'0');
+      const s = (sec%60).toString().padStart(2,'0');
+      return `${m}:${s}`;
+    }
+
+    function startTimer() {
+      if (timerInterval) clearInterval(timerInterval);
+      timerEl.textContent = formatTime(remaining);
+      timerInterval = setInterval(() => {
+        remaining--;
+        timerEl.textContent = formatTime(remaining);
+        if (remaining <= 60) timerEl.classList.add('text-red-400');
+        if (remaining <= 0) {
+          clearInterval(timerInterval);
+          timerEl.textContent = '00:00';
+          // Auto submit
+          gradeTryoutAndShow(true);
+        }
+      }, 1000);
+      // store interval to window so it won't be garbage collected
+      window._tryout_timer_interval = timerInterval;
+    }
+
+    // If user revisits tryout-start, reset timer only if not already running
+    if (!window._tryout_timer_started) {
+      window._tryout_timer_started = true;
+      startTimer();
+    } else {
+      // if timer is already running, use its remaining value if present
+      if (window._tryout_timer_remaining) {
+        remaining = window._tryout_timer_remaining;
+      } else {
+        // keep using our local remaining and continue
+      }
+      startTimer();
+    }
+
+    // Save remaining time periodically to window for navigations
+    setInterval(() => {
+      window._tryout_timer_remaining = remaining;
+    }, 1000);
+
+    // grading
+    function gradeTryoutAndShow(auto=false) {
+      // stop timer
+      if (window._tryout_timer_interval) {
+        clearInterval(window._tryout_timer_interval);
+        window._tryout_timer_interval = null;
+      }
+      const answers = [];
+      let correct = 0;
+      sub.questions.forEach((qq, i) => {
+        const sel = document.querySelector(`input[name="tryout-q-${i}"]:checked`);
+        const val = sel ? sel.value : null;
+        answers.push(val);
+        if (val === qq.answer) correct++;
+      });
+      const totalQ = sub.questions.length;
+      const scorePercent = Math.round((correct / totalQ) * 100);
+      const resultEl = document.getElementById('tryout-result');
+      resultEl.innerHTML = `
+        <div class="bg-white/5 p-4 rounded-lg border border-white/10 text-gray-200">
+          <div class="font-semibold mb-2">Hasil Tryout — ${subject} : ${sub.title}</div>
+          <div>Benar: <span class="font-bold text-green-300">${correct}</span> / ${totalQ}</div>
+          <div>Skor: <span class="font-bold text-blue-300">${scorePercent}</span>%</div>
+          <div class="mt-3 text-xs text-gray-300">${auto ? 'Terkirim otomatis karena waktu habis.' : 'Dikirim manual.'}</div>
+        </div>
+      `;
+      // Optionally show per-soal feedback count and allow review
+      // disable navigation
+      document.getElementById('tryout-prev').disabled = true;
+      document.getElementById('tryout-next').disabled = true;
+      document.getElementById('tryout-submit').disabled = true;
+
+      // reveal correct answers visually
+      sub.questions.forEach((qq,i) => {
+        const radio = document.querySelector(`input[name="tryout-q-${i}"][value="${qq.answer}"]`);
+        if (radio) {
+          const label = radio.closest('label');
+          if (label) {
+            label.style.outline = '2px solid rgba(16,185,129,0.25)'; // green highlight
+            label.style.background = 'rgba(16,185,129,0.04)';
+          }
+        }
+        const sel = document.querySelector(`input[name="tryout-q-${i}"]:checked`);
+        if (sel && sel.value !== qq.answer) {
+          const labelSel = sel.closest('label');
+          if (labelSel) {
+            labelSel.style.opacity = '0.7';
+            labelSel.style.textDecoration = 'line-through';
+          }
+        }
+      });
+
+      // save result to a lightweight local "leaderboard" in localStorage
+      try {
+        const key = 'eduexpert_tryout_results';
+        const prev = JSON.parse(localStorage.getItem(key) || '[]');
+        prev.push({
+          subject: subject,
+          sub: sub.title,
+          date: new Date().toISOString(),
+          score: scorePercent,
+          correct, total: totalQ
+        });
+        localStorage.setItem(key, JSON.stringify(prev.slice(-50))); // keep last 50
+      } catch(e){}
+
+      // scroll to result
+      resultEl.scrollIntoView({behavior:'smooth'});
+    }
+
+    // expose grade function to global (override)
+    window.gradeCurrentTryout = gradeTryoutAndShow;
+  }; // end renderTryoutForSelected
+
+  // Helper escapeHtml if not present
+  if (typeof window.escapeHtml !== 'function') {
+    window.escapeHtml = function(str){ return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+  }
+
+})(); // IIFE end
+</script>
+<!-- END ENHANCED TRYOUT -->
+
+
+<script>
+(function(){
+  // Utilities for user storage
+  function getUsers(){ try { return JSON.parse(localStorage.getItem('eduexpert_users') || '[]'); } catch(e){ return []; } }
+  function saveUsers(u){ localStorage.setItem('eduexpert_users', JSON.stringify(u)); }
+  function getCurrentUser(){ try { return JSON.parse(localStorage.getItem('eduexpert_current_user') || 'null'); } catch(e){ return null; } }
+  function setCurrentUser(u){ localStorage.setItem('eduexpert_current_user', JSON.stringify(u)); }
+  function removeCurrentUser(){ localStorage.removeItem('eduexpert_current_user'); }
+  function findUser(username){ return getUsers().find(u => u.username === username); }
+
+  // Insert "Daftar" link into login form if not present
+  const loginForm = document.getElementById('login-form');
+  if (loginForm && !document.getElementById('link-register')) {
+    const p = document.createElement('p');
+    p.className = 'text-center text-sm text-gray-200 mt-2';
+    p.innerHTML = 'Belum punya akun? <a href="#" id="link-register" class="text-yellow-300 font-semibold">Daftar sekarang</a>';
+    loginForm.appendChild(p);
+  }
+
+  // Page elements
+  const pageLogin = document.getElementById('page-login');
+  const pageRegister = document.getElementById('page-register');
+  const pageMain = document.getElementById('page-main');
+  const loginMessage = document.getElementById('login-message');
+  const registerMessage = document.getElementById('register-message');
+
+  // Show register when link clicked
+  document.addEventListener('click', function(e){
+    if(e.target && e.target.id === 'link-register'){
+      e.preventDefault();
+      if(pageLogin) pageLogin.classList.add('hidden');
+      if(pageRegister) pageRegister.classList.remove('hidden');
+    }
+    if(e.target && e.target.id === 'link-login'){
+      e.preventDefault();
+      if(pageRegister) pageRegister.classList.add('hidden');
+      if(pageLogin) pageLogin.classList.remove('hidden');
+    }
+  });
+
+  // Handle registration
+  const registerForm = document.getElementById('register-form');
+  if(registerForm){
+    registerForm.addEventListener('submit', function(ev){
+      ev.preventDefault();
+      const fullname = document.getElementById('reg_fullname').value.trim();
+      const username = document.getElementById('reg_username').value.trim();
+      const password = document.getElementById('reg_password').value;
+      const school = document.getElementById('reg_school').value.trim();
+      if(!fullname || !username || !password || !school){
+        registerMessage.textContent = 'Semua field harus diisi.';
+        registerMessage.classList.remove('hidden');
+        return;
+      }
+      if(findUser(username)){
+        registerMessage.textContent = 'Username sudah dipakai, pilih yang lain.';
+        registerMessage.classList.remove('hidden');
+        return;
+      }
+      const users = getUsers();
+      const newUser = { username: username, fullname: fullname, password: password, school: school, hasTryout: false };
+      users.push(newUser);
+      saveUsers(users);
+      setCurrentUser({ username: username, fullname: fullname, school: school, hasTryout: false });
+      registerMessage.textContent = 'Akun dibuat dan otomatis login. Selamat!';
+      registerMessage.classList.remove('hidden');
+      // Show main app
+      if(pageRegister) pageRegister.classList.add('hidden');
+      if(pageLogin) pageLogin.classList.add('hidden');
+      if(pageMain) pageMain.classList.remove('hidden');
+      // Update UI and navigate to dashboard
+      try { navigate('dashboard'); } catch(e){}
+      updateUIForUser();
+    });
+  }
+
+  // Override login form submit to use stored accounts
+  if(loginForm){
+    loginForm.addEventListener('submit', function(ev){
+      ev.preventDefault();
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      const user = findUser(username);
+      if(user && user.password === password){
+        setCurrentUser({ username: user.username, fullname: user.fullname, school: user.school, hasTryout: !!user.hasTryout });
+        if(pageLogin) pageLogin.classList.add('hidden');
+        if(pageMain) pageMain.classList.remove('hidden');
+        loginMessage.classList.add('hidden');
+        try { navigate('dashboard'); } catch(e){}
+        updateUIForUser();
+      } else {
+        loginMessage.textContent = 'Username atau Password salah!';
+        loginMessage.classList.remove('hidden');
+      }
+    });
+  }
+
+  // Override logout to clear current user
+  const originalLogout = window.logout;
+  window.logout = function(){
+    removeCurrentUser();
+    // call original if exists (to keep drawer logic)
+    try { if(typeof originalLogout === 'function') originalLogout(); } catch(e){}
+    updateUIForUser();
+  };
+
+  // When a user completes any tryout grading, mark that user as having tryout
+  const originalGradeSubbab = window.gradeSubbab;
+  window.gradeSubbab = function(si, bi){
+    try { if(typeof originalGradeSubbab === 'function') originalGradeSubbab(si, bi); } catch(e){}
+    const cur = getCurrentUser();
+    if(cur){
+      cur.hasTryout = true;
+      setCurrentUser(cur);
+      // persist into users list
+      const users = getUsers().map(u => u.username === cur.username ? Object.assign({}, u, { hasTryout: true }) : u);
+      saveUsers(users);
+      updateUIForUser();
+    }
+  };
+
+  // Update UI depending on login status and whether user has tryout
+  function updateUIForUser(){
+    const curr = getCurrentUser();
+    const progresEl = document.getElementById('content-progres');
+    if(!curr || !curr.hasTryout){
+      if(progresEl) progresEl.classList.add('hidden');
+      // Also hide any "Lihat Progres" buttons/links: search for elements with data-action 'lihat-progres' if present
+      document.querySelectorAll('[data-action="lihat-progres"]').forEach(el => el.style.display = 'none');
+    } else {
+      if(progresEl) progresEl.classList.remove('hidden');
+      document.querySelectorAll('[data-action="lihat-progres"]').forEach(el => el.style.display = '');
+    }
+
+    // Update navbar title with user's name when logged in
+    const navbarTitle = document.getElementById('navbar-title');
+    if(navbarTitle){
+      if(curr && curr.fullname) navbarTitle.textContent = 'Dashboard — ' + curr.fullname;
+      else navbarTitle.textContent = 'Dashboard';
+    }
+  }
+
+  // Initial run on DOMContentLoaded
+  document.addEventListener('DOMContentLoaded', function(){
+    // If there's a current user, automatically show main and set UI
+    const curr = getCurrentUser();
+    if(curr){
+      if(pageLogin) pageLogin.classList.add('hidden');
+      if(pageMain) pageMain.classList.remove('hidden');
+    }
+    updateUIForUser();
+  });
+
+})(); 
+</script>
+
+
+<script>
+// Single total progress per user
+(function(){
+  function getUsers(){ try { return JSON.parse(localStorage.getItem('eduexpert_users')||'[]'); }catch(e){return [];} }
+  function saveUsers(u){ localStorage.setItem('eduexpert_users', JSON.stringify(u)); }
+  function getCurrentUser(){ try { return JSON.parse(localStorage.getItem('eduexpert_current_user')||'null'); }catch(e){return null;} }
+  function setCurrentUser(u){ localStorage.setItem('eduexpert_current_user', JSON.stringify(u)); }
+
+  // override gradeSubbab to update total
+  const orig = window.gradeSubbab;
+  window.gradeSubbab = function(si,bi){
+    if(typeof orig === 'function') orig(si,bi);
+    const curr = getCurrentUser();
+    if(!curr) return;
+    const users = getUsers();
+    const idx = users.findIndex(u=>u.username===curr.username);
+    if(idx<0) return;
+
+    // retrieve last result stored by orig if available
+    let benar = window._lastBenar || 0;
+    let salah = window._lastSalah || 0;
+    let total = benar + salah;
+
+    if(!users[idx].progress) users[idx].progress = {};
+    users[idx].progress.totalBenar = (users[idx].progress.totalBenar||0) + benar;
+    users[idx].progress.totalSalah = (users[idx].progress.totalSalah||0) + salah;
+    users[idx].progress.hasTryout = true;
+
+    saveUsers(users);
+    setCurrentUser(users[idx]);
+  };
+
+})();
+</script>
+
+
+<script>
+// Leaderboard dynamic by totalBenar*10
+(function(){
+  function getUsers(){ try{return JSON.parse(localStorage.getItem('eduexpert_users')||'[]');}catch(e){return [];} }
+  function renderLeaderboard(){
+    const users=getUsers().filter(u=>u.progress&&u.progress.totalBenar>=0);
+    users.forEach(u=>{
+      u.leaderScore=(u.progress.totalBenar||0)*10;
+    });
+    users.sort((a,b)=>b.leaderScore-a.leaderScore);
+    const wrap=document.getElementById('leaderboard-list');
+    if(!wrap) return;
+    wrap.innerHTML="";
+    users.forEach((u,i)=>{
+      const item=document.createElement('div');
+      item.className="p-2 border-b border-gray-300";
+      item.textContent=(i+1)+". "+u.fullname+" — "+u.leaderScore;
+      wrap.appendChild(item);
+    });
+  }
+  document.addEventListener('DOMContentLoaded',renderLeaderboard);
+})();
+</script>
+
+
+<script>
+(function(){
+  function getCurrentUser(){ try{return JSON.parse(localStorage.getItem('eduexpert_current_user')||'null');}catch(e){return null;} }
+  function renderMyLeaderboard(){
+    const u=getCurrentUser();
+    const wrap=document.getElementById('leaderboard-list');
+    if(!wrap) return;
+    wrap.innerHTML="";
+    if(!u){ wrap.textContent="Belum login"; return; }
+    let score=0;
+    if(u.progress && u.progress.totalBenar>=0){
+       score=(u.progress.totalBenar||0)*10;
+    }
+    wrap.textContent = u.fullname + " — " + score;
+  }
+  document.addEventListener('DOMContentLoaded',renderMyLeaderboard);
+})();
+</script>
+
+<script>
+
+// =========================
+//  LOGIN
+// =========================
+document.getElementById("login-form").addEventListener("submit", async function(e){
+    e.preventDefault();
+
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value.trim();
+
+    const res = await fetch("api.php?action=login", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ username, password })
+    });
+
+    const data = await res.json();
+    const msg = document.getElementById("login-message");
+
+    if(data.status === "success"){
+        msg.classList.add("hidden");
+
+        // Simpan user ke localStorage agar UI tetap cocok
+        localStorage.setItem("eduexpert_current_user", JSON.stringify(data.user));
+
+        document.getElementById("page-login").classList.add("hidden");
+        document.getElementById("page-main").classList.remove("hidden");
+        navigate("dashboard");
+    } else {
+        msg.textContent = data.message;
+        msg.classList.remove("hidden");
+    }
+});
+
+
+
+
+// =========================
+//  REGISTER
+// =========================
+document.getElementById("register-form").addEventListener("submit", async function(e){
+    e.preventDefault();
+
+    const fullname = document.getElementById('reg_fullname').value.trim();
+    const username = document.getElementById('reg_username').value.trim();
+    const password = document.getElementById('reg_password').value.trim();
+    const school   = document.getElementById('reg_school').value.trim();
+
+    const res = await fetch("api.php?action=register", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ fullname, username, password, school })
+    });
+
+    const data = await res.json();
+
+    const msg = document.getElementById("register-message");
+
+    if(data.status === "success"){
+        msg.textContent = "Registrasi berhasil! Silakan login.";
+        msg.classList.remove("hidden");
+        msg.style.color = "lightgreen";
+
+        setTimeout(() => {
+            document.getElementById("page-register").classList.add("hidden");
+            document.getElementById("page-login").classList.remove("hidden");
+        }, 1000);
+    } else {
+        msg.textContent = data.message;
+        msg.classList.remove("hidden");
+        msg.style.color = "red";
+    }
+});
+
+
+
+// =========================
+//  SIMPAN PROGRES (nilai)
+// =========================
+async function saveProgress(subject, chapter, score){
+    let fd = new FormData();
+    fd.append("user_id", localStorage.getItem("user_id"));
+    fd.append("subject", subject);
+    fd.append("chapter", chapter);
+    fd.append("score", score);
+
+    await fetch("api.php?action=save_progress", {
+        method: "POST",
+        body: fd
+    });
+}
+
+
+// =========================
+//  LIHAT PROGRES
+// =========================
+async function loadProgress(){
+    let id = localStorage.getItem("user_id");
+    if(!id) return;
+
+    let req = await fetch("api.php?action=get_progress&user_id=" + id);
+    let res = await req.json();
+
+    if(res.status === "success"){
+        let box = document.getElementById("progress-container");
+        box.innerHTML = "";
+
+        res.progress.forEach(p => {
+            box.innerHTML += `
+                <div class="progress-item">
+                    <strong>${p.subject}</strong> - ${p.chapter} <br>
+                    Nilai: ${p.score}
+                </div>
+            `;
+        });
+    }
+}
+
+</script>
+
+</body>
+</html>
